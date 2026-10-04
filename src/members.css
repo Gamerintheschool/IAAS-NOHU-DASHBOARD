@@ -1,0 +1,789 @@
+/* MembersPage Styles */
+.members-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 26px 30px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+}
+
+.members-header-content {
+  max-width: 650px;
+}
+
+.members-header-content h2 {
+  font-family: "Manrope", sans-serif;
+  font-size: 26px;
+  margin: 6px 0 8px;
+  color: var(--text);
+}
+
+.add-member-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  white-space: nowrap;
+}
+
+/* Stats */
+.members-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+/* Controls (Search & Filters) */
+.members-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+  flex-wrap: wrap;
+}
+
+.members-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--page-bg);
+  flex: 1;
+  min-width: 260px;
+  max-width: 440px;
+}
+
+.members-search-wrap input {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  width: 100%;
+  outline: none;
+}
+
+.clear-search {
+  border: none;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.members-filter-pills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--page-bg);
+  color: var(--secondary);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.filter-pill:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.filter-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Members Grid */
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.member-item-card {
+  padding: 22px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.member-item-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.member-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.member-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.member-info-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.member-name-row h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.me-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0369a1;
+  text-transform: uppercase;
+}
+
+[data-theme="dark"] .me-badge {
+  background: #0c4a6e;
+  color: #7dd3fc;
+}
+
+.member-card-no {
+  font-size: 11.5px;
+  color: var(--secondary);
+  font-family: monospace;
+}
+
+.member-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.member-role-badge.admin {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.member-role-badge.member {
+  background: var(--soft-bg);
+  color: var(--secondary);
+  border: 1px solid var(--line);
+}
+
+[data-theme="dark"] .member-role-badge.admin {
+  background: #14532d;
+  color: #86efac;
+  border-color: #166534;
+}
+
+/* Card Details */
+.member-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  padding: 12px 14px;
+  background: var(--soft-bg);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--secondary);
+}
+
+.detail-row svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.detail-row span strong {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.detail-row span small {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary);
+  margin-top: 1px;
+}
+
+.detail-meta-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.detail-meta-group > div span {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--secondary);
+  letter-spacing: 0.3px;
+}
+
+.detail-meta-group > div strong {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.status-active {
+  color: #16a34a !important;
+}
+
+/* Actions */
+.member-card-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.role-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.18s;
+  border: 1px solid transparent;
+}
+
+.role-toggle-btn.grant {
+  background: var(--accent-soft, #edf3e9);
+  color: var(--accent, #346448);
+  border-color: rgba(52, 100, 72, 0.25);
+}
+
+.role-toggle-btn.grant:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.role-toggle-btn.revoke {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.role-toggle-btn.revoke:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+[data-theme="dark"] .role-toggle-btn.grant {
+  background: #254434;
+  color: #86efac;
+  border-color: #2e5944;
+}
+
+[data-theme="dark"] .role-toggle-btn.grant:hover {
+  background: #346448;
+  color: #fff;
+}
+
+[data-theme="dark"] .role-toggle-btn.revoke {
+  background: #451a1a;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+[data-theme="dark"] .role-toggle-btn.revoke:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.delete-member-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.delete-member-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+[data-theme="dark"] .delete-member-btn:hover {
+  background: #451a1a;
+  color: #fca5a5;
+}
+
+/* Modal additions */
+.members-modal {
+  max-width: 540px;
+}
+
+.attendees-modal {
+  max-width: 620px;
+}
+
+.modal-field-full {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+  margin-top: 14px;
+}
+
+.modal-select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--page-bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.modal-textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--page-bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.modal-textarea:focus,
+.modal-select:focus {
+  border-color: var(--accent);
+}
+
+/* Admin Nav Tabs */
+.admin-nav-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+  overflow-x: auto;
+}
+
+.admin-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.admin-tab-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.admin-tab-btn.active {
+  background: var(--accent-light);
+  border-color: rgba(30, 92, 62, 0.2);
+  color: var(--accent);
+}
+
+.tab-badge {
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--line);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-tab-btn.active .tab-badge {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Admin Events Grid */
+.admin-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.admin-event-card {
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.admin-event-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-event-date-pill {
+  font-size: 12px;
+  color: var(--secondary);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--page-bg);
+  border: 1px solid var(--line);
+}
+
+.admin-event-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.admin-event-desc {
+  font-size: 13px;
+  color: var(--secondary);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-event-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--secondary);
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--page-bg);
+  border: 1px solid var(--line);
+}
+
+.admin-event-meta-list div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-attendees-bar-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attendees-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--secondary);
+}
+
+.attendees-progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.attendees-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.admin-event-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.attendee-list-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+
+/* Attendee Modal Content */
+.attendee-modal-event-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--page-bg);
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+
+.attendees-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attendees-meta-summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--secondary);
+  padding: 0 4px;
+}
+
+.attendee-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.attendee-card-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+}
+
+.attendee-avatar {
+  width: 38px;
+  height: 38px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.attendee-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.attendee-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.attendee-sub-row,
+.attendee-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--secondary);
+}
+
+.remove-attendee-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: transparent;
+  color: #ef4444;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.remove-attendee-btn:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .remove-attendee-btn:hover {
+  background: #451a1a;
+  color: #fca5a5;
+}
+
+.attendees-empty {
+  padding: 36px 20px;
+  text-align: center;
+}
+
+/* Admin Announcements Grid */
+.admin-announcements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.admin-ann-card {
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-ann-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.admin-ann-meta {
+  flex: 1;
+}
+
+.admin-ann-meta h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 4px 0 0;
+  line-height: 1.35;
+}
+
+.admin-ann-body {
+  font-size: 13px;
+  color: var(--secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.admin-ann-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+}
+
+.status-dot-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .members-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .members-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .admin-quick-actions,
+  .add-member-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .members-grid,
+  .admin-events-grid,
+  .admin-announcements-grid {
+    grid-template-columns: 1fr;
+  }
+}

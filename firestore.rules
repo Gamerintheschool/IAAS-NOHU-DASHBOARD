@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Yardımcı fonksiyonlar
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Üye Profilleri Koleksiyonu (users)
+    match /users/{userId} {
+      // Giriş yapmış tüm üyeler kulüp üyelerini görüntüleyebilir
+      allow read: isAuthenticated();
+      
+      // Yeni kaydolan kullanıcı sadece kendi dokümanını oluşturabilir
+      allow create: isOwner(userId);
+      
+      // Kullanıcı kendi profilini güncelleyebilir veya admin yetkisine sahip kullanıcı rol/yetki düzenleyebilir
+      allow update: isOwner(userId) || (isAuthenticated() && request.auth.token.admin == true);
+      
+      // Silme işlemi kapalıdır (güvenlik için)
+      allow delete: if false;
+    }
+
+    // 2. Öğrenci Numarası Tekillik İndeksi (studentNumbers)
+    // Aynı öğrenci numarasıyla mükerrer hesap açılmasını veritabanı seviyesinde önler
+    match /studentNumbers/{studentNo} {
+      allow read: isAuthenticated();
+      allow create: isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // 3. Etkinlikler ve Katılımcılar (events)
+    match /events/{eventId} {
+      // Tüm kulüp üyeleri ve ziyaretçiler etkinlikleri görebilir
+      allow read: if true;
+      
+      // Katılımcı ekleme/çıkarma veya admin etkinlik yönetimi
+      allow write: isAuthenticated();
+    }
+
+    // 4. Kulüp Duyuruları (announcements)
+    match /announcements/{announcementId} {
+      // Duyuruları herkes okuyabilir
+      allow read: if true;
+      
+      // Sadece giriş yapmış yetkili kulüp üyeleri duyuru ekleyebilir
+      allow write: isAuthenticated();
+    }
+  }
+}

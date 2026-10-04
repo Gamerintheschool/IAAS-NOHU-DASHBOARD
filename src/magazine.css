@@ -1,0 +1,642 @@
+.magazine-theme {
+  background: #282b2e;
+  color: #eeeae2;
+  min-height: 100vh;
+}
+.magazine-theme .topbar {
+  background: #25282b;
+  border-color: #3a3d3f;
+}
+.magazine-theme .breadcrumb strong,
+.magazine-theme .search-wrap input,
+.magazine-theme .icon-button {
+  color: #d0d1ca;
+}
+.magazine-theme .top-divider {
+  background: #444744;
+}
+.magazine-theme .search-wrap kbd {
+  border-color: #4d514c;
+}
+.magazine-theme .icon-button:hover {
+  background: #41453f;
+}
+.magazine-theme .search-results,
+.magazine-theme .notifications-popover {
+  color: #28372f;
+}
+.magazine-theme .footer {
+  border-top: 1px solid #424543;
+  margin-top: 30px;
+}
+.magazine-theme .footer,
+.magazine-theme .footer button {
+  color: #a5aaa0;
+}
+.magazine-page {
+  padding-top: 5px;
+}
+.mag-edition,
+.mag-edition > span,
+.mag-intro,
+.mag-intro > span,
+.mag-heading,
+.mag-featured-bottom,
+.mag-featured-bottom > span,
+.mag-section-heading,
+.mag-article-meta,
+.mag-byline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mag-edition {
+  color: #b9c699;
+  font-size: 9px;
+  letter-spacing: 1.9px;
+}
+.mag-edition > span {
+  gap: 9px;
+}
+.mag-edition > span:last-child {
+  color: #aaa99f;
+  font-size: 8px;
+}
+.mag-edition i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #969e88;
+}
+.mag-heading {
+  padding: 23px 0 24px;
+  gap: 20px;
+}
+.mag-heading h1 {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(58px, 7vw, 94px);
+  font-weight: 400;
+  letter-spacing: -5px;
+  line-height: 1.08;
+  color: #f3f0e6;
+}
+.mag-heading h1 > span {
+  color: #bbcc91;
+}
+.mag-heading > p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #b1b3aa;
+  padding-top: 15px;
+}
+.mag-intro {
+  border-top: 1px solid #52554e;
+  border-bottom: 1px solid #52554e;
+  padding: 13px 0;
+  color: #bfc2b7;
+  font-size: 10px;
+  gap: 15px;
+}
+.mag-intro > span:last-child {
+  gap: 7px;
+  color: #8f9987;
+  font-size: 9px;
+}
+.mag-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 21px 0;
+}
+.mag-filters button {
+  border-radius: 5px;
+  border: 1px solid transparent;
+  color: #b5b8ae;
+  padding: 8px 18px;
+  font-size: 11px;
+}
+.mag-filters button:hover {
+  background: #3c403a;
+  color: #ecf0df;
+}
+.mag-filters button.active {
+  background: #c3ceaa;
+  border-color: #c3ceaa;
+  color: #2c3527;
+  font-weight: 600;
+}
+.mag-filters > span {
+  margin-left: auto;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #969e90;
+}
+.mag-featured {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #494e42;
+  border-radius: 8px;
+  min-height: 395px;
+  display: flex;
+  align-items: flex-end;
+  background: #1c2c24;
+}
+.mag-featured > img {
+  position: absolute;
+  inset: 0;
+  filter: saturate(0.7);
+}
+.mag-featured-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, #14221cec, #14221c9c 48%, #14221c08),
+    linear-gradient(0deg, #14221c99, transparent 75%);
+}
+.mag-featured-content {
+  position: relative;
+  padding: 38px;
+  max-width: 600px;
+}
+.mag-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: #c5d5ac;
+}
+.mag-kicker > i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c5d5ac;
+}
+.mag-kicker > span {
+  opacity: 0.5;
+  margin: 0 3px;
+}
+.mag-featured h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 3.4vw, 48px);
+  font-weight: 400;
+  line-height: 1.13;
+  letter-spacing: -1.1px;
+  color: #f3f2e8;
+  margin: 25px 0 16px;
+  max-width: 450px;
+}
+.mag-featured p {
+  color: #c8d0c1;
+  font-size: 12px;
+  line-height: 1.9;
+  max-width: 355px;
+}
+.mag-featured-bottom {
+  justify-content: flex-start;
+  gap: 23px;
+  margin-top: 27px;
+}
+.mag-read-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #d0dabc;
+  border: 1px solid #d0dabc;
+  border-radius: 4px;
+  padding: 11px 16px;
+  color: #2f402b;
+  font-size: 11px;
+  font-weight: 600;
+}
+.mag-read-button:hover {
+  background: #e0e9ca;
+  transform: translateY(-2px);
+}
+.mag-featured-bottom > span {
+  gap: 6px;
+  color: #b2bea5;
+  font-size: 9px;
+}
+.mag-cover-number {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #d1d9c5;
+}
+.mag-stories {
+  margin-top: 34px;
+}
+.mag-section-heading {
+  gap: 12px;
+  margin-bottom: 21px;
+}
+.mag-section-heading h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+.mag-section-heading > span {
+  font-size: 7px;
+  letter-spacing: 1.6px;
+  color: #939a88;
+  white-space: nowrap;
+}
+.mag-article-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+}
+.mag-article-card {
+  min-width: 0;
+}
+.mag-article-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.7;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: transparent;
+}
+.mag-article-image img {
+  transition: transform 0.4s;
+  filter: saturate(0.65);
+}
+.mag-article-image:hover img {
+  transform: scale(1.04);
+}
+.mag-article-image > span {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 29px;
+  height: 29px;
+  background: #1e292481;
+  border: 1px solid #d3deca50;
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  color: #f0f2e8;
+  display: grid;
+  place-items: center;
+}
+.mag-article-meta {
+  margin: 17px 0 10px;
+  font-size: 8px;
+  color: #98a08e;
+}
+.mag-article-meta > span:first-child {
+  color: #becba3;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+}
+.mag-article-card h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+.mag-article-card h3 button {
+  font: inherit;
+  color: #ecebe2;
+  padding: 0;
+  text-align: left;
+}
+.mag-article-card h3 button:hover {
+  color: #cfddb3;
+}
+.mag-article-card > p {
+  color: #adb2a7;
+  font-size: 11px;
+  line-height: 1.85;
+  margin-top: 12px;
+  min-height: 41px;
+}
+.mag-byline {
+  border-top: 1px solid #44483f;
+  margin-top: 19px;
+  padding-top: 13px;
+  font-size: 8px;
+  color: #919b86;
+  gap: 8px;
+}
+.mag-byline > span:first-child {
+  color: #bec5b3;
+}
+.mag-editor-note {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-top: 35px;
+  border: 1px solid #4d5544;
+  border-radius: 6px;
+  background: #32372f;
+}
+.mag-note-icon {
+  color: #b4c59b;
+  display: grid;
+  place-items: center;
+  border: 1px solid #5a634e;
+  width: 49px;
+  height: 49px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mag-editor-note p {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  color: #e0e5d4;
+  margin: 8px 0;
+}
+.mag-editor-note small {
+  display: block;
+  color: #a4ae97;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.mag-editor-note > svg {
+  color: #a7b590;
+  margin-left: auto;
+}
+.mag-demo-note {
+  font-size: 9px;
+  color: #969e90;
+  margin-top: 18px;
+  line-height: 1.8;
+}
+.magazine-theme button:focus-visible,
+.magazine-reader-modal button:focus-visible {
+  outline-color: #c5d5ac;
+}
+.magazine-reader-modal {
+  width: 740px;
+  background: #282b2e;
+  color: #eceae2;
+}
+.magazine-reader-modal .modal-close {
+  background: #282b2eeb;
+  color: #eceae2;
+}
+.magazine-reader-modal .modal-close:hover {
+  background: #454a42;
+}
+.mag-reader-image {
+  height: 280px;
+}
+.mag-reader-content {
+  padding: 36px 45px;
+}
+.mag-reader h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+  margin: 22px 0 16px;
+}
+.mag-reader-byline {
+  font-size: 11px;
+  color: #aeb5a4;
+  margin-bottom: 25px;
+  display: flex;
+  gap: 11px;
+}
+.mag-reader-content > p {
+  font-size: 14px;
+  color: #c0c5ba;
+  line-height: 1.95;
+  margin: 20px 0;
+}
+.mag-reader-content > p.mag-reader-intro {
+  font-size: 17px;
+  color: #e1e5d8;
+  line-height: 1.7;
+  border-left: 2px solid #aebe8c;
+  padding-left: 17px;
+  margin: 27px 0;
+}
+.mag-reader-end {
+  border-top: 1px solid #495043;
+  padding-top: 22px;
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #b9c6a3;
+}
+@media (max-width: 1100px) {
+  .mag-featured-content {
+    padding: 30px;
+  }
+  .mag-article-grid {
+    gap: 18px;
+  }
+  .mag-article-card h3 {
+    font-size: 21px;
+  }
+  .mag-heading > p {
+    font-size: 11px;
+  }
+}
+@media (max-width: 760px) {
+  .mag-heading h1 {
+    font-size: 64px;
+    letter-spacing: -3px;
+  }
+  .mag-heading > p {
+    font-size: 10px;
+  }
+  .mag-intro {
+    font-size: 9px;
+  }
+  .mag-intro > span:last-child {
+    font-size: 8px;
+  }
+  .mag-featured {
+    min-height: 370px;
+  }
+  .mag-featured h2 {
+    font-size: 41px;
+    max-width: 360px;
+  }
+  .mag-article-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 18px;
+  }
+  .mag-section-heading h2 {
+    font-size: 22px;
+  }
+  .mag-reader-content {
+    padding: 27px;
+  }
+  .mag-reader h2 {
+    font-size: 33px;
+  }
+}
+@media (max-width: 480px) {
+  .mag-edition {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .mag-edition > span:last-child {
+    font-size: 7px;
+  }
+  .mag-heading {
+    padding: 23px 0 20px;
+    display: block;
+  }
+  .mag-heading h1 {
+    font-size: 68px;
+  }
+  .mag-heading > p {
+    font-size: 11px;
+    line-height: 1.8;
+    padding-top: 12px;
+  }
+  .mag-heading > p br {
+    display: none;
+  }
+  .mag-intro {
+    padding: 12px 0;
+  }
+  .mag-intro > span:last-child {
+    display: none;
+  }
+  .mag-filters {
+    gap: 4px;
+    padding: 17px 0;
+    flex-wrap: wrap;
+  }
+  .mag-filters button {
+    font-size: 10px;
+    padding: 8px 12px;
+  }
+  .mag-filters > span {
+    font-size: 6px;
+    letter-spacing: 0.7px;
+  }
+  .mag-featured {
+    min-height: 410px;
+  }
+  .mag-featured-content {
+    padding: 24px;
+  }
+  .mag-featured-shade {
+    background: linear-gradient(0deg, #12211df5, #14221c81 65%, #14221c30);
+  }
+  .mag-featured h2 {
+    font-size: 37px;
+    line-height: 1.15;
+    margin-top: 22px;
+  }
+  .mag-featured p {
+    font-size: 11px;
+  }
+  .mag-kicker {
+    font-size: 7px;
+    letter-spacing: 1px;
+    gap: 6px;
+  }
+  .mag-featured-bottom {
+    gap: 15px;
+    margin-top: 23px;
+  }
+  .mag-featured-bottom > span {
+    font-size: 8px;
+  }
+  .mag-read-button {
+    font-size: 10px;
+    gap: 14px;
+    padding: 10px 13px;
+  }
+  .mag-cover-number {
+    top: 18px;
+    right: 18px;
+    bottom: auto;
+    font-size: 8px;
+  }
+  .mag-section-heading {
+    align-items: flex-start;
+  }
+  .mag-section-heading h2 {
+    font-size: 23px;
+    max-width: 230px;
+    line-height: 1.25;
+  }
+  .mag-section-heading > span {
+    font-size: 6px;
+    margin-top: 6px;
+  }
+  .mag-article-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .mag-article-image {
+    aspect-ratio: 1.8;
+  }
+  .mag-article-card h3 {
+    font-size: 27px;
+  }
+  .mag-article-card > p {
+    font-size: 12px;
+    min-height: 0;
+  }
+  .mag-article-meta,
+  .mag-byline {
+    font-size: 9px;
+  }
+  .mag-editor-note {
+    align-items: flex-start;
+    gap: 13px;
+    padding: 20px 16px;
+  }
+  .mag-note-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .mag-note-icon svg {
+    width: 18px;
+  }
+  .mag-editor-note p {
+    font-size: 19px;
+    line-height: 1.4;
+  }
+  .mag-editor-note small {
+    font-size: 9px;
+  }
+  .mag-editor-note > svg {
+    display: none;
+  }
+  .mag-demo-note {
+    font-size: 8px;
+  }
+  .mag-reader-image {
+    height: 200px;
+  }
+  .mag-reader-content {
+    padding: 26px 22px;
+  }
+  .mag-reader h2 {
+    font-size: 31px;
+  }
+  .mag-reader-byline {
+    font-size: 9px;
+    gap: 8px;
+  }
+  .mag-reader-content > p {
+    font-size: 13px;
+  }
+  .mag-reader-content > p.mag-reader-intro {
+    font-size: 15px;
+  }
+}

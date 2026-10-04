@@ -1,0 +1,485 @@
+html[data-theme="light"] {
+  background: #fff;
+}
+html[data-theme="dark"] {
+  background: #282b2e;
+}
+
+.app-shell[data-theme] {
+  --page-bg: #fff;
+  --surface-bg: #fff;
+  --soft-bg: #f4f6f2;
+  --line: #e2e6df;
+  --text: #28372f;
+  --secondary: #62705f;
+  --quiet: #73806f;
+  --accent: #346448;
+  --accent-soft: #edf3e9;
+  --border: var(--line);
+  --green: var(--accent);
+  --sidebar-width: 248px;
+  --visible-sidebar: var(--sidebar-width);
+  color: var(--text);
+  background: var(--page-bg);
+  min-height: 100vh;
+}
+.app-shell[data-theme="dark"] {
+  --page-bg: #282b2e;
+  --surface-bg: #303437;
+  --soft-bg: #373c3d;
+  --line: #484e4e;
+  --text: #edf0e8;
+  --secondary: #c1c9bc;
+  --quiet: #a7b1a3;
+  --accent: #c1d2a6;
+  --accent-soft: #3b463b;
+}
+.app-shell[data-theme] .main-shell {
+  min-height: 100vh;
+  margin-left: var(--visible-sidebar);
+  background: var(--page-bg);
+  color: var(--text);
+  transition: margin-left 0.22s ease;
+}
+.app-shell[data-theme]
+  :is(
+    .sidebar,
+    .topbar,
+    .stat-card,
+    .membership-panel,
+    .event-card,
+    .announcements-panel,
+    .surface,
+    .empty-state,
+    .today,
+    .search-results,
+    .notifications-popover,
+    .modal,
+    .toast
+  ) {
+  background: var(--surface-bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+.app-shell[data-theme]
+  :is(
+    .workspace,
+    .sidebar-profile,
+    .event-footer,
+    .news-item,
+    .all-news,
+    .form-footer,
+    .modal-event-meta,
+    .text-modal details,
+    .notifications-popover p
+  ) {
+  border-color: var(--line);
+}
+.app-shell[data-theme]
+  :is(
+    .brand strong,
+    .workspace strong,
+    .sidebar-profile strong,
+    .breadcrumb strong,
+    .membership-details strong,
+    .news-content > strong,
+    .empty-state h2,
+    .community-strip strong,
+    .mag-heading h1,
+    .mag-section-heading h2,
+    .mag-article-card h3 button,
+    .mag-reader h2
+  ) {
+  color: var(--text);
+}
+.app-shell[data-theme]
+  :is(
+    .brand-symbol,
+    .grow-icon,
+    .workspace-icon,
+    .small-leaf,
+    .hello-spark,
+    .text-link,
+    .all-news,
+    .stat-link,
+    .community-strip-icon,
+    .brand strong span,
+    .form-grid label,
+    .text-modal summary
+  ) {
+  color: var(--accent);
+}
+.app-shell[data-theme]
+  :is(
+    .brand small,
+    .workspace span,
+    .workspace > svg,
+    .sidebar-profile span,
+    .sidebar-profile > svg,
+    .grow-card p,
+    .breadcrumb,
+    .breadcrumb > svg,
+    .search-wrap,
+    .search-wrap input::placeholder,
+    .search-results small,
+    .page-heading p,
+    .eyebrow,
+    .today,
+    .today svg,
+    .stat-label,
+    .stat-unit,
+    .stat-note,
+    .membership-details span,
+    .section-title p,
+    .event-meta,
+    .event-meta > svg,
+    .attending,
+    .news-category,
+    .news-excerpt,
+    .news-content small,
+    .community-strip p,
+    .footer,
+    .footer button,
+    .section-kicker,
+    .muted,
+    .benefit,
+    .form-footer > span,
+    .modal-event-meta p,
+    .modal-event-meta svg,
+    .demo-note,
+    .text-modal details p,
+    .notifications-popover p
+  ) {
+  color: var(--secondary);
+}
+.app-shell[data-theme] .nav-label {
+  color: var(--quiet);
+}
+.app-shell[data-theme]
+  :is(.nav-item, .icon-button, .search-wrap input, .event-footer > button) {
+  color: var(--secondary);
+}
+.app-shell[data-theme]
+  :is(
+    .nav-item:hover,
+    .icon-button:hover,
+    .search-results button:hover,
+    .all-news:hover,
+    .event-footer > button:hover
+  ) {
+  background: var(--soft-bg);
+  color: var(--text);
+}
+.app-shell[data-theme] .nav-item.selected {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.app-shell[data-theme] .nav-item.selected::before {
+  background: var(--accent);
+}
+.app-shell[data-theme]
+  :is(.nav-count, .workspace-icon, .avatar, .benefit > span, .toast > span) {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--surface-bg);
+}
+.app-shell[data-theme] :is(.grow-card, .community-strip, .invite-message) {
+  background: var(--soft-bg);
+  border-color: var(--line);
+  color: var(--secondary);
+}
+.app-shell[data-theme] .grow-decoration {
+  color: var(--line);
+}
+.app-shell[data-theme] .top-divider {
+  background: var(--line);
+}
+.app-shell[data-theme] .search-wrap kbd {
+  border-color: var(--line);
+  color: var(--quiet);
+}
+.app-shell[data-theme] :is(.outline-button, .filter, .form-grid input) {
+  background: var(--surface-bg);
+  border-color: var(--line);
+  color: var(--text);
+}
+.app-shell[data-theme] .form-grid input {
+  background: var(--soft-bg);
+}
+.app-shell[data-theme] .outline-button:hover {
+  background: var(--soft-bg);
+  border-color: var(--accent);
+}
+.app-shell[data-theme] :is(.filter.active, .primary-button) {
+  background: #24573e;
+  color: #fff;
+  border-color: #24573e;
+}
+.app-shell[data-theme="dark"] :is(.filter.active, .primary-button) {
+  background: #c1d2a6;
+  color: #253422;
+  border-color: #c1d2a6;
+}
+.app-shell[data-theme] .primary-button:hover {
+  filter: brightness(1.08);
+}
+.app-shell[data-theme] .modal-close {
+  background: var(--surface-bg);
+  color: var(--text);
+}
+.app-shell[data-theme] .modal-close:hover {
+  background: var(--soft-bg);
+}
+.app-shell[data-theme] .notification-button i {
+  border-color: var(--surface-bg);
+}
+.app-shell[data-theme="dark"]
+  :is(.mint, .category.green, .stat-trend, .joined-badge) {
+  background: #3b4c3f;
+  color: #d0e2be;
+}
+.app-shell[data-theme="dark"] :is(.peach, .category.orange, .news-category b) {
+  background: #514735;
+  color: #ead1a7;
+}
+.app-shell[data-theme="dark"] :is(.lavender, .category.purple) {
+  background: #484151;
+  color: #dbcaec;
+}
+.app-shell[data-theme="dark"] .modal-backdrop {
+  background: #0a1013c9;
+}
+.app-shell[data-theme] :is(button, a, input):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.app-shell[data-theme] .sidebar {
+  scrollbar-color: var(--line) transparent;
+  transition: transform 0.22s ease;
+}
+.sidebar-toggle {
+  display: grid;
+  flex-shrink: 0;
+}
+.sidebar-close {
+  position: absolute;
+  top: 9px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+}
+.theme-switch {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  gap: 3px;
+  background: var(--soft-bg);
+  flex-shrink: 0;
+}
+.theme-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--secondary);
+  min-height: 29px;
+}
+.theme-switch button[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--surface-bg);
+  box-shadow: 0 1px 4px #0000000c;
+}
+.theme-switch button:hover {
+  color: var(--accent);
+}
+.app-shell[data-theme] .toast {
+  left: calc(50% + var(--visible-sidebar) / 2);
+}
+
+/* Editorial imagery stays unchanged; the reading surfaces follow the global theme. */
+.app-shell[data-theme] .magazine-theme .topbar {
+  background: var(--surface-bg);
+  border-color: var(--line);
+}
+.app-shell[data-theme] .magazine-reader-modal {
+  background: var(--page-bg);
+  color: var(--text);
+}
+.app-shell[data-theme]
+  :is(
+    .mag-heading > p,
+    .mag-intro,
+    .mag-intro > span:last-child,
+    .mag-edition > span:last-child,
+    .mag-filters > span,
+    .mag-section-heading > span,
+    .mag-article-meta,
+    .mag-article-card > p,
+    .mag-byline,
+    .mag-reader-byline,
+    .mag-reader-content > p,
+    .mag-demo-note
+  ) {
+  color: var(--secondary);
+}
+.app-shell[data-theme]
+  :is(
+    .mag-edition,
+    .mag-heading h1 > span,
+    .mag-article-meta > span:first-child,
+    .mag-byline > span:first-child,
+    .mag-reader .mag-kicker,
+    .mag-reader-end
+  ) {
+  color: var(--accent);
+}
+.app-shell[data-theme]
+  :is(.mag-intro, .mag-byline, .mag-reader-end, .magazine-theme .footer) {
+  border-color: var(--line);
+}
+.app-shell[data-theme] .mag-filters button {
+  color: var(--secondary);
+}
+.app-shell[data-theme] .mag-filters button:hover {
+  background: var(--soft-bg);
+  color: var(--text);
+}
+.app-shell[data-theme] .mag-filters button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--line);
+}
+.app-shell[data-theme] .mag-editor-note {
+  background: var(--soft-bg);
+  border-color: var(--line);
+}
+.app-shell[data-theme]
+  :is(.mag-editor-note p, .mag-reader-content > p.mag-reader-intro) {
+  color: var(--text);
+}
+.app-shell[data-theme] .mag-editor-note small {
+  color: var(--secondary);
+}
+.app-shell[data-theme]
+  :is(.mag-editor-note .mag-kicker, .mag-note-icon, .mag-editor-note > svg) {
+  color: var(--accent);
+  border-color: var(--line);
+}
+.app-shell[data-theme] .mag-reader-content > p.mag-reader-intro {
+  border-color: var(--accent);
+}
+
+@media (min-width: 1450px) {
+  .app-shell[data-theme] {
+    --sidebar-width: 265px;
+  }
+}
+@media (min-width: 1021px) and (max-width: 1190px) {
+  .app-shell[data-theme] {
+    --sidebar-width: 215px;
+  }
+}
+@media (min-width: 761px) and (max-width: 1020px) {
+  .app-shell[data-theme] {
+    --sidebar-width: 190px;
+  }
+}
+@media (min-width: 761px) {
+  .app-shell.sidebar-collapsed {
+    --visible-sidebar: 0px;
+  }
+  .app-shell.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+}
+@media (max-width: 1100px) {
+  .app-shell[data-theme] .breadcrumb > span,
+  .app-shell[data-theme] .breadcrumb > svg {
+    display: none;
+  }
+  .theme-switch button span {
+    display: none;
+  }
+  .app-shell[data-theme] .topbar-actions {
+    gap: 12px;
+  }
+  .app-shell[data-theme] .search-wrap {
+    width: 170px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell[data-theme] {
+    --visible-sidebar: 0px;
+  }
+  .app-shell[data-theme] .sidebar:not(.open) {
+    visibility: hidden;
+  }
+  .app-shell[data-theme] .sidebar.open {
+    visibility: visible;
+  }
+  .app-shell[data-theme] .topbar-actions {
+    gap: 9px;
+  }
+  .app-shell[data-theme] .search-wrap {
+    width: 110px;
+  }
+  .theme-switch button {
+    min-height: 28px;
+    padding: 5px 6px;
+  }
+  .theme-switch {
+    gap: 1px;
+    padding: 2px;
+  }
+  .sidebar-close {
+    top: 10px;
+    right: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .app-shell[data-theme] .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .app-shell[data-theme] .topbar-actions {
+    gap: 6px;
+  }
+  .app-shell[data-theme] .breadcrumb {
+    gap: 5px;
+    min-width: 0;
+  }
+  .app-shell[data-theme] .breadcrumb strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+  .app-shell[data-theme] .search-wrap {
+    width: 88px;
+    gap: 4px;
+  }
+  .app-shell[data-theme] .search-wrap input {
+    font-size: 8px;
+  }
+  .app-shell[data-theme] .search-wrap > svg {
+    width: 13px;
+  }
+  .app-shell[data-theme] .top-avatar {
+    width: 26px;
+    height: 26px;
+  }
+}
+@media (max-width: 360px) {
+  .app-shell[data-theme] .search-wrap {
+    width: 65px;
+  }
+  .app-shell[data-theme] .breadcrumb strong {
+    max-width: 45px;
+  }
+}

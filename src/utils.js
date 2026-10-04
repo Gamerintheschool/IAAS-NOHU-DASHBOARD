@@ -17,20 +17,20 @@ export function normalizeStudentNo(val) {
 }
 
 /**
- * Ferit Çolak'a ait hesapları (e-posta, öğrenci no veya isim) tespit eder.
- * Bu kriterlere uyan tüm hesaplar platform genelinde otomatik olarak Kulüp Yöneticisi (Admin) yetkisine sahip olur.
- *
- * Eşleşmeler:
- *  - E-posta: feritefeturksadcolak@ohu.edu.tr, Colakferit21@gmail.com, feritefeturksadcolak...
- *  - Öğrenci No: 240102015, 210405001
- *  - İsim: Ferit Efe Türkşad Çolak, Ferit Çolak
+ * Yönetici (Admin) hesaplarını tespit eder.
+ * AdminTR veya Ferit Çolak hesapları ve Firestore'da rolü 'admin' olan kullanıcılar tam yetkiye sahip olur.
  */
-export function isFeritUser(target) {
+export function isAdminUser(target) {
   if (!target) return false;
   if (typeof target === "string") {
     const clean = target.trim().toLowerCase();
     const cleanDigits = clean.replace(/[^a-zA-Z0-9]/g, "");
     return (
+      clean === "admintr@ohu.edu.tr" ||
+      clean === "admin" ||
+      clean === "admintr" ||
+      clean === "drj92uslignftnleopd2umd9hoh2" ||
+      cleanDigits === "240102020" ||
       clean === "colakferit21@gmail.com" ||
       clean === "feritefeturksadcolak@ohu.edu.tr" ||
       clean.startsWith("feritefeturksadcolak") ||
@@ -39,10 +39,20 @@ export function isFeritUser(target) {
       (clean.includes("ferit") && (clean.includes("colak") || clean.includes("çolak")))
     );
   }
+
+  if (target.role === "admin") return true;
+
   const em = (target.email || "").trim().toLowerCase();
   const sNo = normalizeStudentNo(target.studentNo || target.cleanStudentNo);
   const name = (target.name || "").trim().toLowerCase();
+  const uid = (target.uid || target.id || "").trim();
+
   return (
+    uid === "dRJ92UsligNfTNlEopd2UMd9HOH2" ||
+    em === "admintr@ohu.edu.tr" ||
+    name === "admintr" ||
+    name.includes("admintr") ||
+    sNo === "240102020" ||
     em === "colakferit21@gmail.com" ||
     em === "feritefeturksadcolak@ohu.edu.tr" ||
     em.startsWith("feritefeturksadcolak") ||
@@ -50,5 +60,12 @@ export function isFeritUser(target) {
     sNo === "210405001" ||
     (name.includes("ferit") && (name.includes("colak") || name.includes("çolak")))
   );
+}
+
+/**
+ * Geriye dönük uyumluluk için alias
+ */
+export function isFeritUser(target) {
+  return isAdminUser(target);
 }
 

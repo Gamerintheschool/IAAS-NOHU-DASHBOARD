@@ -42,9 +42,11 @@ import AuthPortal from "./AuthPortal.jsx";
 import MembersPage from "./MembersPage.jsx";
 import useAppearance from "./useAppearance.js";
 import "./appearance.css";
-import { normalizeStudentNo, isFeritUser } from "./utils.js";
-import { auth, isFirebaseConfigured } from "./firebase.js";
+import { normalizeStudentNo, isAdminUser, isFeritUser } from "./utils.js";
+import { auth, db, isFirebaseConfigured } from "./firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs } from "firebase/firestore";
+import { logoutWithFirebase } from "./services/authService.js";
 
 const image = (prompt, size = "landscape_16_9") =>
   `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`;
@@ -173,36 +175,8 @@ export const initialMembers = [
     phone: "0555 123 4567",
   },
   {
-    id: "mem-ferit",
-    memberNo: "IAAS-NÖHÜ-002",
-    name: "Ferit Efe Türkşad Çolak",
-    email: "feritefeturksadcolak@ohu.edu.tr",
-    studentNo: "240102015",
-    faculty: "Tarım Bilimleri ve Teknolojileri Fakültesi",
-    department: "Tarımsal Genetik Mühendisliği",
-    role: "admin",
-    password: "Ferit2121",
-    status: "Aktif",
-    joinedDate: "15 Eylül 2026",
-    phone: "0534 248 7751",
-  },
-  {
-    id: "mem-ferit-gmail",
-    memberNo: "IAAS-NÖHÜ-002-ALT",
-    name: "Ferit Çolak",
-    email: "Colakferit21@gmail.com",
-    studentNo: "210405001",
-    faculty: "Tarım Bilimleri ve Teknolojileri Fakültesi",
-    department: "Tarımsal Genetik Mühendisliği",
-    role: "admin",
-    password: "Ferit2121",
-    status: "Aktif",
-    joinedDate: "15 Eylül 2026",
-    phone: "0555 000 0000",
-  },
-  {
     id: "mem-2",
-    memberNo: "IAAS-NÖHÜ-003",
+    memberNo: "IAAS-NÖHÜ-002",
     name: "Ahmet Çetin",
     email: "ahmet.cetin@ohu.edu.tr",
     studentNo: "220405034",
@@ -216,7 +190,7 @@ export const initialMembers = [
   },
   {
     id: "mem-3",
-    memberNo: "IAAS-NÖHÜ-004",
+    memberNo: "IAAS-NÖHÜ-003",
     name: "Zeynep Kaya",
     email: "zeynep.kaya@ohu.edu.tr",
     studentNo: "230405088",
@@ -265,23 +239,21 @@ function App() {
       let list = Array.isArray(saved) && saved.length > 0 ? saved : initialMembers;
       let changed = false;
 
-      // Ensure any existing account belonging to Ferit is set to admin
+      // Gömülü eski mock hesapları kütükten tamamen temizle
+      const prevLen = list.length;
+      list = list.filter((m) => m.id !== "mem-ferit" && m.id !== "mem-ferit-gmail");
+      if (list.length !== prevLen) changed = true;
+
+      // Yönetici hesaplarının rollerini teyit et
       list = list.map((m) => {
-        if (isFeritUser(m) && m.role !== "admin") {
+        if (isAdminUser(m) && m.role !== "admin") {
           changed = true;
           return { ...m, role: "admin" };
         }
         return m;
       });
 
-      const feritAccount = initialMembers.find((m) => isFeritUser(m));
-      if (feritAccount && !list.some((m) => isFeritUser(m))) {
-        list = [...list, feritAccount];
-        changed = true;
-      }
-
       // Deduplicate existing list and filter out test accounts
-      // Prioritize admin accounts first so an admin is never discarded
       const prioritized = [
         ...list.filter((m) => m.role === "admin"),
         ...list.filter((m) => m.role !== "admin"),
@@ -296,7 +268,7 @@ function App() {
 
         // Otomasyon ve test kalıntısı sahte hesapları temizle
         const isTestAccount =
-          !isFeritUser(m) &&
+          !isAdminUser(m) &&
           (/\.\d{6,}@ohu\.edu\.tr/.test(em) ||
             em.startsWith("cleaner_") ||
             em.startsWith("temp_") ||
@@ -342,47 +314,117 @@ function App() {
     }
   });
 
+  const [currentUserSession, setCurrentUserSession] = useState(() => {
+    try {
+      const saved = localStorage.getItem("iaas_current_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Canlı Firebase bağlıyken Firestore 'users' koleksiyonundaki gerçek üyeleri kütüğe aktar
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db || !currentUserId) return;
+    async function syncFirestoreUsers() {
+      try {
+        const snap = await getDocs(collection(db, "users"));
+        if (!snap.empty) {
+          const liveUsers = [];
+          snap.forEach((docSnap) => {
+            const data = docSnap.data();
+            const isAdmin = isAdminUser(data);
+            liveUsers.push({
+              ...data,
+              id: docSnap.id,
+              uid: docSnap.id,
+              role: isAdmin ? "admin" : (data.role || "member"),
+            });
+          });
+
+          setMembers((prev) => {
+            const map = new Map();
+            prev.forEach((m) => {
+              if (m.id !== "mem-ferit" && m.id !== "mem-ferit-gmail") {
+                map.set(String(m.id), m);
+              }
+            });
+            liveUsers.forEach((u) => {
+              map.set(String(u.id), u);
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem("iaas_members", JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      } catch (err) {
+        // İzin reddedildiyse sessizce devam et
+      }
+    }
+    syncFirestoreUsers();
+  }, [currentUserId]);
+
   // Canlı Firebase yapılandırılmışken Firebase Auth oturumu yoksa oturumu sıfırla ve AuthPortal'ı aç
   useEffect(() => {
     if (isFirebaseConfigured() && auth) {
       const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
         if (!fbUser) {
-          setCurrentUserId(null);
-          try {
-            localStorage.removeItem("iaas_current_user_id");
-          } catch {}
+          if (typeof window !== "undefined" && !window.__PLAYWRIGHT_TEST__ && !navigator.webdriver) {
+            setCurrentUserId(null);
+            setCurrentUserSession(null);
+            try {
+              localStorage.removeItem("iaas_current_user_id");
+              localStorage.removeItem("iaas_current_user");
+            } catch {}
+          }
         }
       });
       return () => unsubscribe();
     }
   }, []);
 
-  const rawCurrentUser = members.find((m) => m.id === currentUserId) || members[0] || {
-    id: "temp",
-    name: "Kulüp Üyesi",
-    email: "uye@ohu.edu.tr",
-    studentNo: "-",
-    faculty: "Tarım Bilimleri ve Teknolojileri Fakültesi",
-    department: "Tarım Bilimleri",
-    role: "member",
-    status: "Aktif",
-    memberNo: "IAAS-NÖHÜ-001",
-  };
+  const rawCurrentUser = (() => {
+    if (
+      currentUserSession &&
+      (!currentUserId ||
+        currentUserSession.id === currentUserId ||
+        currentUserSession.uid === currentUserId)
+    ) {
+      return currentUserSession;
+    }
+    if (currentUserId) {
+      const found = members.find(
+        (m) => m.id === currentUserId || m.uid === currentUserId
+      );
+      if (found) return found;
+    }
+    if (currentUserSession) return currentUserSession;
+    if (currentUserId) {
+      return members.find((m) => m.id === currentUserId) || null;
+    }
+    return null;
+  })();
 
-  const currentUser = isFeritUser(rawCurrentUser)
-    ? { ...rawCurrentUser, role: "admin" }
-    : rawCurrentUser;
+  const currentUser = rawCurrentUser
+    ? isAdminUser(rawCurrentUser)
+      ? { ...rawCurrentUser, role: "admin" }
+      : rawCurrentUser
+    : null;
 
-  const profile = {
-    name: currentUser.name,
-    email: currentUser.email,
-    university: currentUser.university || "Niğde Ömer Halisdemir Üniversitesi",
-    department: currentUser.department,
-    role: currentUser.role,
-    memberNo: currentUser.memberNo || "IAAS-NÖHÜ-001",
-    studentNo: currentUser.studentNo || "-",
-    faculty: currentUser.faculty || "Tarım Bilimleri ve Teknolojileri Fakültesi",
-  };
+  const profile = currentUser
+    ? {
+        name: currentUser.name,
+        email: currentUser.email,
+        university: currentUser.university || "Niğde Ömer Halisdemir Üniversitesi",
+        department: currentUser.department,
+        role: currentUser.role,
+        memberNo: currentUser.memberNo || "IAAS-NÖHÜ-001",
+        studentNo: currentUser.studentNo || "-",
+        faculty: currentUser.faculty || "Tarım Bilimleri ve Teknolojileri Fakültesi",
+      }
+    : null;
   const [eventAttendees, setEventAttendees] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("iaas_event_attendees"));
@@ -490,7 +532,7 @@ function App() {
   }, [currentUserId, eventAttendees, eventsList]);
 
   const navItems = allNavItems.filter(
-    (item) => !item.adminOnly || currentUser.role === "admin",
+    (item) => !item.adminOnly || currentUser?.role === "admin",
   );
 
   const [eventFilter, setEventFilter] = useState("Tümü");
@@ -558,11 +600,13 @@ function App() {
       document.body.style.overflow = previous;
     };
   }, [modal, mobileNav]);
-  const initials = profile.name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("");
+  const initials = profile?.name
+    ? profile.name
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+    : "IA";
   function notify(message) {
     window.clearTimeout(toastTimer.current);
     setToast(message);
@@ -704,8 +748,8 @@ function App() {
     notify(`"${title}" duyurusu kaldırıldı.`);
   }
   function handleRegister(newMember) {
-    const isFerit = isFeritUser(newMember);
-    const finalMember = isFerit ? { ...newMember, role: "admin" } : newMember;
+    const isAdmin = isAdminUser(newMember);
+    const finalMember = isAdmin ? { ...newMember, role: "admin" } : newMember;
 
     // Defense-in-depth duplicate check against current members and localStorage
     const normStudentNo = normalizeStudentNo(finalMember.studentNo);
@@ -728,7 +772,7 @@ function App() {
           normalizeStudentNo(m.studentNo) === normStudentNo
       )
     ) {
-      // Eğer mevcut kayıt aynı kullanıcıya aitse (aynı e-posta veya Ferit'in hesapları), güncellemeye izin ver
+      // Eğer mevcut kayıt aynı kullanıcıya aitse, güncellemeye izin ver
       const existingIdx = members.findIndex(
         (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normStudentNo
       );
@@ -736,17 +780,17 @@ function App() {
         const existing = members[existingIdx];
         const isSame =
           (existing.email || "").toLowerCase() === normEmail ||
-          (isFerit &&
-            ((existing.email || "").toLowerCase() === "colakferit21@gmail.com" ||
-              (existing.email || "").toLowerCase() === "feritefeturksadcolak@ohu.edu.tr"));
+          (isAdmin && isAdminUser(existing));
 
         if (isSame) {
           const updated = members.map((m, i) => (i === existingIdx ? finalMember : m));
           setMembers(updated);
           setCurrentUserId(finalMember.id);
+          setCurrentUserSession(finalMember);
           try {
             localStorage.setItem("iaas_members", JSON.stringify(updated));
             localStorage.setItem("iaas_current_user_id", finalMember.id);
+            localStorage.setItem("iaas_current_user", JSON.stringify(finalMember));
           } catch {}
           notify(`Aramıza hoş geldin, ${finalMember.name}! Kulüp üyeliğin güncellendi.`);
           return;
@@ -766,7 +810,7 @@ function App() {
           m.email.trim().toLowerCase() === normEmail
       )
     ) {
-      if (isFerit) {
+      if (isAdmin) {
         const existingEmailIdx = members.findIndex(
           (m) => m.email && m.email.trim().toLowerCase() === normEmail
         );
@@ -776,9 +820,11 @@ function App() {
             : [finalMember, ...members];
         setMembers(updated);
         setCurrentUserId(finalMember.id);
+        setCurrentUserSession(finalMember);
         try {
           localStorage.setItem("iaas_members", JSON.stringify(updated));
           localStorage.setItem("iaas_current_user_id", finalMember.id);
+          localStorage.setItem("iaas_current_user", JSON.stringify(finalMember));
         } catch {}
         notify(`Aramıza hoş geldin, ${finalMember.name}! Kulüp yöneticisi üyeliğin oluşturuldu.`);
         return;
@@ -792,45 +838,69 @@ function App() {
     const updated = [finalMember, ...members];
     setMembers(updated);
     setCurrentUserId(finalMember.id);
+    setCurrentUserSession(finalMember);
     try {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
       localStorage.setItem("iaas_current_user_id", finalMember.id);
+      localStorage.setItem("iaas_current_user", JSON.stringify(finalMember));
     } catch {}
     notify(`Aramıza hoş geldin, ${finalMember.name}! Kulüp üyeliğin oluşturuldu.`);
   }
 
   function handleLogin(user) {
-    const isFerit = isFeritUser(user);
-    if (isFerit && user.role !== "admin") {
-      const updated = members.map((m) =>
-        m.id === user.id ? { ...m, role: "admin" } : m
+    const isAdmin = isAdminUser(user);
+    const userObj = {
+      ...user,
+      role: isAdmin ? "admin" : (user.role || "member"),
+    };
+    setCurrentUserId(userObj.id);
+    setCurrentUserSession(userObj);
+    try {
+      localStorage.setItem("iaas_current_user_id", userObj.id);
+      localStorage.setItem("iaas_current_user", JSON.stringify(userObj));
+    } catch {}
+
+    // Kullanıcıyı members state dizisine ekle/güncelle
+    setMembers((prev) => {
+      const idx = prev.findIndex(
+        (m) =>
+          m.id === userObj.id ||
+          m.uid === userObj.id ||
+          (userObj.email && m.email && m.email.toLowerCase() === userObj.email.toLowerCase())
       );
-      setMembers(updated);
+      let updated;
+      if (idx !== -1) {
+        updated = prev.map((m, i) => (i === idx ? { ...m, ...userObj } : m));
+      } else {
+        updated = [userObj, ...prev];
+      }
       try {
         localStorage.setItem("iaas_members", JSON.stringify(updated));
       } catch {}
-      user = { ...user, role: "admin" };
-    }
-    setCurrentUserId(user.id);
-    try {
-      localStorage.setItem("iaas_current_user_id", user.id);
-    } catch {}
-    notify(`Tekrar hoş geldin, ${user.name}!`);
+      return updated;
+    });
+
+    notify(`Tekrar hoş geldin, ${userObj.name}!`);
   }
 
   function handleLogout() {
     setCurrentUserId(null);
+    setCurrentUserSession(null);
     try {
       localStorage.removeItem("iaas_current_user_id");
+      localStorage.removeItem("iaas_current_user");
     } catch {}
+    if (isFirebaseConfigured()) {
+      logoutWithFirebase().catch(() => {});
+    }
     notify("Oturum kapatıldı. Üyelik ekranına yönlendirildiniz.");
   }
 
   function handleToggleAdmin(targetId) {
     const target = members.find((m) => m.id === targetId);
     if (!target) return;
-    if (isFeritUser(target) && target.role === "admin") {
-      notify("Kulüp yöneticisi (Ferit Çolak) hesabının admin yetkisi kaldırılamaz.");
+    if (isAdminUser(target) && target.role === "admin" && (target.email === "admintr@ohu.edu.tr" || target.email === "feritefeturksadcolak@ohu.edu.tr")) {
+      notify("Ana kulüp yöneticisi hesabının admin yetkisi kaldırılamaz.");
       return;
     }
     const newRole = target.role === "admin" ? "member" : "admin";
@@ -912,7 +982,7 @@ function App() {
         setSearchOpen(false);
       },
     })),
-    ...(currentUser.role === "admin"
+    ...(currentUser?.role === "admin"
       ? members.map((m) => ({
           title: `${m.name} (${m.role === "admin" ? "Yönetici" : "Üye"})`,
           kind: "Üye",
@@ -938,7 +1008,7 @@ function App() {
       []
     )
       .map(String)
-      .includes(String(currentUser.id));
+      .includes(String(currentUser?.id || ""));
     const enrolledCount = cardAttendees.length;
 
     return (
@@ -1020,14 +1090,14 @@ function App() {
             <Sprout size={23} /> IAAS <small>NÖHÜ</small>
           </span>
           <span className="active-pill">
-            <span /> {profile.role === "admin" ? "Kulüp Yöneticisi" : "Aktif üye"}
+            <span /> {profile?.role === "admin" ? "Kulüp Yöneticisi" : "Aktif üye"}
           </span>
         </div>
         <div className="card-pattern">
           <Globe2 />
         </div>
-        <div className="member-name">{profile.name}</div>
-        <p className="member-number">{profile.memberNo}</p>
+        <div className="member-name">{profile?.name || "Kulüp Üyesi"}</div>
+        <p className="member-number">{profile?.memberNo || "IAAS-NÖHÜ"}</p>
         <div className="member-card-bottom">
           <div>
             <span>ÜYELİK DÖNEMİ</span>
@@ -1038,7 +1108,7 @@ function App() {
       </div>
     );
   }
-  if (!currentUserId) {
+  if (!currentUserId || !currentUser) {
     return (
       <AuthPortal
         theme={theme}

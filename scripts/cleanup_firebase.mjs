@@ -66,6 +66,8 @@ function isRealAccount(user) {
   const sNo = (user.studentNo || "").trim();
   const uid = user.uid || user.id || "";
 
+  if (email === "admintr@ohu.edu.tr" || sNo === "240102020" || uid === "dRJ92UsligNfTNlEopd2UMd9HOH2") return true;
+  if (email === "arda.torna@ohu.edu.tr" || sNo === "250102009" || uid === "5DkXwaX4vCb3FbEDk9nbQmF2Aoh1") return true;
   if (email === "feritefeturksadcolak@ohu.edu.tr") return true;
   if (email === "colakferit21@gmail.com") return true;
   if (sNo === "240102015") return true;

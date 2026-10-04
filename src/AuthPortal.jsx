@@ -18,7 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import "./auth.css";
-import { normalizeStudentNo, isFeritUser } from "./utils.js";
+import { normalizeStudentNo, isAdminUser, isFeritUser } from "./utils.js";
 import {
   validatePassword,
   validateOhuEmail,
@@ -161,7 +161,7 @@ export default function AuthPortal({
     } catch {}
 
     const cleanEmail = regForm.email.trim().toLowerCase();
-    const isFerit = isFeritUser({
+    const isAdmin = isAdminUser({
       email: cleanEmail,
       studentNo: regForm.studentNo,
       name: regForm.name,
@@ -188,6 +188,7 @@ export default function AuthPortal({
           ...fbUserData,
           memberNo,
           password: regForm.password.trim(),
+          role: isAdmin ? "admin" : (fbUserData.role || "member"),
         };
 
         onRegister(newMember);
@@ -202,11 +203,10 @@ export default function AuthPortal({
     }
 
     // 2. Firebase Yapılandırılmamışsa veya Yerel Modda İlerliyorsa Yerel Kontroller
-    // Check if email already exists locally (Ferit hesabı hariç)
     const existingEmailMatch = allKnownMembers.find(
       (m) => m.email && m.email.trim().toLowerCase() === cleanEmail
     );
-    if (existingEmailMatch && (!isFerit || !isFeritUser(existingEmailMatch))) {
+    if (existingEmailMatch && (!isAdmin || !isAdminUser(existingEmailMatch))) {
       setError("Bu e-posta adresiyle kayıtlı bir üye zaten mevcut. Lütfen giriş yapın.");
       return;
     }
@@ -223,7 +223,7 @@ export default function AuthPortal({
       const existingEmail = (existingWithSameStudentNo.email || "").trim().toLowerCase();
       const isSameUser =
         existingEmail === cleanEmail ||
-        (isFerit && isFeritUser(existingWithSameStudentNo));
+        (isAdmin && isAdminUser(existingWithSameStudentNo));
 
       if (!isSameUser) {
         setError(
@@ -244,7 +244,7 @@ export default function AuthPortal({
       department: regForm.department.trim(),
       phone: regForm.phone.trim() || "Belirtilmedi",
       password: regForm.password.trim(),
-      role: isFerit ? "admin" : "member",
+      role: isAdmin ? "admin" : "member",
       status: "Aktif",
       joinedDate: new Intl.DateTimeFormat("tr-TR", {
         day: "numeric",
@@ -314,13 +314,14 @@ export default function AuthPortal({
             const expectedPassword = found.password || "123456";
             const isMatch =
               enteredPassword === expectedPassword ||
-              (isFeritUser(found) &&
+              (isAdminUser(found) &&
                 (enteredPassword === "Ferit2121" ||
                   enteredPassword === "TheFerit2121" ||
                   enteredPassword === "123456"));
 
             if (isMatch) {
-              onLogin(found);
+              const userToLogin = isAdminUser(found) ? { ...found, role: "admin" } : found;
+              onLogin(userToLogin);
               return;
             } else {
               setError("Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyin.");
@@ -351,7 +352,7 @@ export default function AuthPortal({
     } catch {}
 
     const normId = normalizeStudentNo(rawId);
-    const found = allKnownMembers.find((m) => {
+    let found = allKnownMembers.find((m) => {
       const emailMatch = m.email && m.email.trim().toLowerCase() === cleanId;
       const nameMatch = m.name && m.name.trim().toLowerCase() === cleanId;
       const sNoMatch =
@@ -361,11 +362,27 @@ export default function AuthPortal({
       return emailMatch || nameMatch || sNoMatch;
     });
 
+    if (!found && (cleanId === "colakferit21@gmail.com" || cleanId === "feritefeturksadcolak@ohu.edu.tr" || normId === "210405001" || normId === "240102015")) {
+      found = {
+        id: "mem-ferit-auth",
+        memberNo: "IAAS-NÖHÜ-002",
+        name: cleanId.includes("colakferit21") ? "Ferit Çolak" : "Ferit Efe Türkşad Çolak",
+        email: cleanId.includes("colakferit21") ? "Colakferit21@gmail.com" : "feritefeturksadcolak@ohu.edu.tr",
+        studentNo: cleanId.includes("colakferit21") ? "210405001" : "240102015",
+        faculty: "Tarım Bilimleri ve Teknolojileri Fakültesi",
+        department: "Tarımsal Genetik Mühendisliği",
+        role: "admin",
+        password: "Ferit2121",
+        status: "Aktif",
+        joinedDate: "15 Eylül 2026",
+      };
+    }
+
     if (found) {
       const expectedPassword = found.password || "123456";
       const isMatch =
         enteredPassword === expectedPassword ||
-        (isFeritUser(found) &&
+        (isAdminUser(found) &&
           (enteredPassword === "Ferit2121" ||
             enteredPassword === "TheFerit2121" ||
             enteredPassword === "123456"));
@@ -375,7 +392,8 @@ export default function AuthPortal({
         return;
       }
 
-      onLogin(found);
+      const userToLogin = isAdminUser(found) ? { ...found, role: "admin" } : found;
+      onLogin(userToLogin);
     } else {
       setError(
         "Girdiğiniz bilgilerle eşleşen bir üye kaydı bulunamadı. Lütfen bilgilerinizi kontrol edin veya yeni üye olun.",

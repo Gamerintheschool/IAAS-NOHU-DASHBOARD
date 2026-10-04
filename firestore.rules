@@ -27,10 +27,12 @@ service cloud.firestore {
     }
 
     // 2. Öğrenci Numarası Tekillik İndeksi (studentNumbers)
-    // Aynı öğrenci numarasıyla mükerrer hesap açılmasını veritabanı seviyesinde önler
+    // Giriş yaparken öğrenci numarasından e-posta adresini sorgulayabilmek için
+    // oturum açmamış kullanıcılara da okuma izni verilir.
+    // Bu koleksiyon yalnızca { uid, email, createdAt } eşleşmesini tutar.
     match /studentNumbers/{studentNo} {
-      allow read: isAuthenticated();
-      allow create, update, delete: if isAuthenticated();
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
 
     // 3. Etkinlikler ve Katılımcılar (events)

@@ -42,7 +42,7 @@ import AuthPortal from "./AuthPortal.jsx";
 import MembersPage from "./MembersPage.jsx";
 import useAppearance from "./useAppearance.js";
 import "./appearance.css";
-import { normalizeStudentNo } from "./utils.js";
+import { normalizeStudentNo, isFeritUser } from "./utils.js";
 
 const image = (prompt, size = "landscape_16_9") =>
   `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`;
@@ -173,6 +173,20 @@ export const initialMembers = [
   {
     id: "mem-ferit",
     memberNo: "IAAS-NÖHÜ-002",
+    name: "Ferit Efe Türkşad Çolak",
+    email: "feritefeturksadcolak@ohu.edu.tr",
+    studentNo: "240102015",
+    faculty: "Tarım Bilimleri ve Teknolojileri Fakültesi",
+    department: "Tarımsal Genetik Mühendisliği",
+    role: "admin",
+    password: "123456",
+    status: "Aktif",
+    joinedDate: "15 Eylül 2026",
+    phone: "0534 248 7751",
+  },
+  {
+    id: "mem-ferit-gmail",
+    memberNo: "IAAS-NÖHÜ-002-ALT",
     name: "Ferit Çolak",
     email: "Colakferit21@gmail.com",
     studentNo: "210405001",
@@ -249,23 +263,17 @@ function App() {
       let list = Array.isArray(saved) && saved.length > 0 ? saved : initialMembers;
       let changed = false;
 
-      // Ensure any existing account with Colakferit21@gmail.com or feritefeturksadcolak@ohu.edu.tr is set to admin
-      const isFeritEmail = (em) => {
-        if (!em) return false;
-        const lower = em.toLowerCase().trim();
-        return lower === "colakferit21@gmail.com" || lower.startsWith("feritefeturksadcolak");
-      };
-
+      // Ensure any existing account belonging to Ferit is set to admin
       list = list.map((m) => {
-        if (isFeritEmail(m.email) && m.role !== "admin") {
+        if (isFeritUser(m) && m.role !== "admin") {
           changed = true;
           return { ...m, role: "admin" };
         }
         return m;
       });
 
-      const feritAccount = initialMembers.find((m) => isFeritEmail(m.email));
-      if (feritAccount && !list.some((m) => isFeritEmail(m.email))) {
+      const feritAccount = initialMembers.find((m) => isFeritUser(m));
+      if (feritAccount && !list.some((m) => isFeritUser(m))) {
         list = [...list, feritAccount];
         changed = true;
       }
@@ -319,7 +327,7 @@ function App() {
     }
   });
 
-  const currentUser = members.find((m) => m.id === currentUserId) || members[0] || {
+  const rawCurrentUser = members.find((m) => m.id === currentUserId) || members[0] || {
     id: "temp",
     name: "Kulüp Üyesi",
     email: "uye@ohu.edu.tr",
@@ -330,6 +338,10 @@ function App() {
     status: "Aktif",
     memberNo: "IAAS-NÖHÜ-001",
   };
+
+  const currentUser = isFeritUser(rawCurrentUser)
+    ? { ...rawCurrentUser, role: "admin" }
+    : rawCurrentUser;
 
   const profile = {
     name: currentUser.name,
@@ -662,10 +674,7 @@ function App() {
     notify(`"${title}" duyurusu kaldırıldı.`);
   }
   function handleRegister(newMember) {
-    const cleanEmail = (newMember.email || "").toLowerCase().trim();
-    const isFerit =
-      cleanEmail === "colakferit21@gmail.com" ||
-      cleanEmail.startsWith("feritefeturksadcolak");
+    const isFerit = isFeritUser(newMember);
     const finalMember = isFerit ? { ...newMember, role: "admin" } : newMember;
 
     // Defense-in-depth duplicate check against current members and localStorage
@@ -744,10 +753,7 @@ function App() {
   }
 
   function handleLogin(user) {
-    const cleanEmail = (user.email || "").toLowerCase().trim();
-    const isFerit =
-      cleanEmail === "colakferit21@gmail.com" ||
-      cleanEmail.startsWith("feritefeturksadcolak");
+    const isFerit = isFeritUser(user);
     if (isFerit && user.role !== "admin") {
       const updated = members.map((m) =>
         m.id === user.id ? { ...m, role: "admin" } : m
@@ -776,6 +782,10 @@ function App() {
   function handleToggleAdmin(targetId) {
     const target = members.find((m) => m.id === targetId);
     if (!target) return;
+    if (isFeritUser(target) && target.role === "admin") {
+      notify("Kulüp yöneticisi (Ferit Çolak) hesabının admin yetkisi kaldırılamaz.");
+      return;
+    }
     const newRole = target.role === "admin" ? "member" : "admin";
     const updated = members.map((m) =>
       m.id === targetId ? { ...m, role: newRole } : m

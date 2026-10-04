@@ -6,6 +6,7 @@
 // =======================================================================
 
 import { auth, db, isFirebaseConfigured } from "../firebase";
+import { isFeritUser } from "../utils.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -130,7 +131,7 @@ export const registerWithFirebase = async ({
 
   const cleanEmail = email.trim().toLowerCase();
   const cleanStudentNo = studentNo.trim().replace(/[^a-zA-Z0-9]/g, "");
-  const isFerit = cleanEmail === "colakferit21@gmail.com" || cleanEmail === "feritefeturksadcolak@ohu.edu.tr";
+  const isFerit = isFeritUser({ email: cleanEmail, studentNo, name });
 
   // 1. Öğrenci numarası Firestore'da zaten kayıtlı mı kontrol et
   try {
@@ -265,10 +266,12 @@ export const loginWithFirebase = async (identifier, password) => {
 
   if (snapshot.exists()) {
     const data = snapshot.data();
+    const isAdmin = isFeritUser({ ...data, email: user.email });
     return {
       id: user.uid,
       uid: user.uid,
       ...data,
+      role: isAdmin ? "admin" : (data.role || "member"),
     };
   }
 
@@ -277,10 +280,7 @@ export const loginWithFirebase = async (identifier, password) => {
     uid: user.uid,
     name: user.displayName || user.email.split("@")[0],
     email: user.email,
-    role:
-      user.email === "colakferit21@gmail.com" || user.email === "feritefeturksadcolak@ohu.edu.tr"
-        ? "admin"
-        : "member",
+    role: isFeritUser(user.email) ? "admin" : "member",
     status: "Aktif",
   };
 };

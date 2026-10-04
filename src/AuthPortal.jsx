@@ -18,7 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import "./auth.css";
-import { normalizeStudentNo } from "./utils.js";
+import { normalizeStudentNo, isFeritUser } from "./utils.js";
 import {
   validatePassword,
   validateOhuEmail,
@@ -161,9 +161,11 @@ export default function AuthPortal({
     } catch {}
 
     const cleanEmail = regForm.email.trim().toLowerCase();
-    const isFerit =
-      cleanEmail === "colakferit21@gmail.com" ||
-      cleanEmail === "feritefeturksadcolak@ohu.edu.tr";
+    const isFerit = isFeritUser({
+      email: cleanEmail,
+      studentNo: regForm.studentNo,
+      name: regForm.name,
+    });
 
     // Check if email already exists locally
     if (allKnownMembers.some((m) => m.email && m.email.trim().toLowerCase() === cleanEmail)) {
@@ -183,9 +185,7 @@ export default function AuthPortal({
       const existingEmail = (existingWithSameStudentNo.email || "").trim().toLowerCase();
       const isSameUser =
         existingEmail === cleanEmail ||
-        (isFerit &&
-          (existingEmail === "colakferit21@gmail.com" ||
-            existingEmail === "feritefeturksadcolak@ohu.edu.tr"));
+        (isFerit && isFeritUser(existingWithSameStudentNo));
 
       if (!isSameUser) {
         setError(

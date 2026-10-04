@@ -94,31 +94,43 @@ async function runCleanup() {
     console.log(`- KORUNAN Gerçek Hesap: ${realUsers.length} adet (${realUsers.map((u) => u.email).join(", ")})`);
     console.log(`- TEMİZLENECEK Sahte/Test Hesap: ${fakeUsers.length} adet`);
 
-    await deleteUser(tempAuthUser);
-    tempAuthUser = null;
-
     let authDeletedCount = 0;
-    let firestoreCleanedCount = 0;
+    let firestoreUsersDeleted = 0;
+    let firestoreStudentNosDeleted = 0;
 
-    for (let i = 0; i < fakeUsers.length; i++) {
-      const u = fakeUsers[i];
+    // Delete fake users from Firestore while authenticated as bot
+    console.log("Firestore 'users' koleksiyonu temizleniyor...");
+    for (const u of fakeUsers) {
+      try {
+        await deleteDoc(doc(db, "users", u.id));
+        firestoreUsersDeleted++;
+      } catch (err) {
+        // Kurallar izin vermiyorsa
+      }
+    }
+
+    // Delete fake student numbers from Firestore
+    console.log("Firestore 'studentNumbers' koleksiyonu temizleniyor...");
+    try {
+      const sSnap = await getDocs(collection(db, "studentNumbers"));
+      for (const sDoc of sSnap.docs) {
+        const sNo = sDoc.id;
+        const sEmail = (sDoc.data()?.email || "").toLowerCase();
+        if (sEmail === "feritefeturksadcolak@ohu.edu.tr" || sEmail === "colakferit21@gmail.com" || sNo === "240102015" || sNo === "210405001") {
+          continue; // Korunan hesap
+        }
+        try {
+          await deleteDoc(doc(db, "studentNumbers", sNo));
+          firestoreStudentNosDeleted++;
+        } catch {}
+      }
+    } catch {}
+
+    // Check Firebase Auth deletion
+    for (const u of fakeUsers) {
       const email = (u.email || "").trim().toLowerCase();
-
       try {
         const fakeAuth = await signInWithEmailAndPassword(auth, email, "123456");
-        try {
-          await deleteDoc(doc(db, "users", u.id));
-          firestoreCleanedCount++;
-        } catch {
-          try {
-            await setDoc(doc(db, "users", u.id), {
-              deleted: true,
-              status: "Silindi",
-              deletedAt: new Date().toISOString(),
-            });
-            firestoreCleanedCount++;
-          } catch {}
-        }
         await deleteUser(fakeAuth.user);
         authDeletedCount++;
       } catch (err) {
@@ -126,9 +138,15 @@ async function runCleanup() {
       }
     }
 
+    // Botu sil
+    await deleteUser(tempAuthUser);
+    tempAuthUser = null;
+
     console.log("\n=================================================");
     console.log("TEMİZLİK RAPORU:");
     console.log(`- Firebase Authentication'dan Silinen: ${authDeletedCount}`);
+    console.log(`- Firestore 'users' Silinen: ${firestoreUsersDeleted}/${fakeUsers.length}`);
+    console.log(`- Firestore 'studentNumbers' Silinen: ${firestoreStudentNosDeleted}`);
     console.log(`- Ferit Efe Türkşad Çolak Hesabı: GÜVENLE KORUNDU ✓`);
     console.log("=================================================");
   } catch (err) {

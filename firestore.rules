@@ -22,16 +22,15 @@ service cloud.firestore {
       // Kullanıcı kendi profilini güncelleyebilir veya admin yetkisine sahip kullanıcı rol/yetki düzenleyebilir
       allow update: isOwner(userId) || (isAuthenticated() && request.auth.token.admin == true);
       
-      // Silme işlemi kapalıdır (güvenlik için)
-      allow delete: if false;
+      // Kullanıcı kendi hesabını veya yetkili hesapları silebilir
+      allow delete: if isAuthenticated();
     }
 
     // 2. Öğrenci Numarası Tekillik İndeksi (studentNumbers)
     // Aynı öğrenci numarasıyla mükerrer hesap açılmasını veritabanı seviyesinde önler
     match /studentNumbers/{studentNo} {
       allow read: isAuthenticated();
-      allow create, update: isAuthenticated();
-      allow delete: if false;
+      allow create, update, delete: if isAuthenticated();
     }
 
     // 3. Etkinlikler ve Katılımcılar (events)

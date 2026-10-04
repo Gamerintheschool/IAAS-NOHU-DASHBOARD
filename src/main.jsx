@@ -43,6 +43,8 @@ import MembersPage from "./MembersPage.jsx";
 import useAppearance from "./useAppearance.js";
 import "./appearance.css";
 import { normalizeStudentNo, isFeritUser } from "./utils.js";
+import { auth, isFirebaseConfigured } from "./firebase.js";
+import { onAuthStateChanged } from "firebase/auth";
 
 const image = (prompt, size = "landscape_16_9") =>
   `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`;
@@ -339,6 +341,21 @@ function App() {
       return null;
     }
   });
+
+  // Canlı Firebase yapılandırılmışken Firebase Auth oturumu yoksa oturumu sıfırla ve AuthPortal'ı aç
+  useEffect(() => {
+    if (isFirebaseConfigured() && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+        if (!fbUser) {
+          setCurrentUserId(null);
+          try {
+            localStorage.removeItem("iaas_current_user_id");
+          } catch {}
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, []);
 
   const rawCurrentUser = members.find((m) => m.id === currentUserId) || members[0] || {
     id: "temp",

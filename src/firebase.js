@@ -24,6 +24,16 @@ export const firebaseConfig = {
  * @returns {boolean}
  */
 export const isFirebaseConfigured = () => {
+  // Test ve otomasyon ortamlarında canlı Firebase'e sahte test hesaplarının gitmesini kesin olarak engeller
+  if (
+    typeof window !== "undefined" &&
+    (window.sessionStorage?.getItem("test_no_auth") === "true" ||
+      window.__PLAYWRIGHT_TEST__ ||
+      navigator.webdriver)
+  ) {
+    return false;
+  }
+
   const key = firebaseConfig.apiKey?.trim();
   const projectId = firebaseConfig.projectId?.trim();
   return Boolean(

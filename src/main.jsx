@@ -278,7 +278,7 @@ function App() {
         changed = true;
       }
 
-      // Deduplicate existing list to clean up any past duplicates created in user's browser
+      // Deduplicate existing list and filter out test accounts
       // Prioritize admin accounts first so an admin is never discarded
       const prioritized = [
         ...list.filter((m) => m.role === "admin"),
@@ -291,6 +291,19 @@ function App() {
       for (const m of prioritized) {
         const sNo = normalizeStudentNo(m.studentNo);
         const em = (m.email || "").trim().toLowerCase();
+
+        // Otomasyon ve test kalıntısı sahte hesapları temizle
+        const isTestAccount =
+          !isFeritUser(m) &&
+          (/\.\d{6,}@ohu\.edu\.tr/.test(em) ||
+            em.startsWith("cleaner_") ||
+            em.startsWith("temp_") ||
+            em.startsWith("deneme."));
+
+        if (isTestAccount) {
+          changed = true;
+          continue;
+        }
 
         const isDupStudent = sNo && seenStudentNos.has(sNo);
         const isDupEmail = em && seenEmails.has(em);

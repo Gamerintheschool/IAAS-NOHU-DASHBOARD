@@ -275,14 +275,34 @@ export const loginWithFirebase = async (identifier, password) => {
     };
   }
 
-  return {
-    id: user.uid,
+  const isFerit = isFeritUser(user.email);
+  const fallbackProfile = {
     uid: user.uid,
-    name: user.displayName || user.email.split("@")[0],
+    id: user.uid,
+    name: isFerit ? "Ferit Efe Türkşad Çolak" : (user.displayName || user.email.split("@")[0]),
     email: user.email,
-    role: isFeritUser(user.email) ? "admin" : "member",
+    studentNo: isFerit ? "240102015" : "",
+    cleanStudentNo: isFerit ? "240102015" : "",
+    faculty: isFerit ? "Tarım Bilimleri ve Teknolojileri Fakültesi" : "Belirtilmedi",
+    department: isFerit ? "Tarımsal Genetik Mühendisliği" : "Belirtilmedi",
+    phone: isFerit ? "0534 248 7751" : "Belirtilmedi",
+    role: isFerit ? "admin" : "member",
     status: "Aktif",
+    joinedDate: "15 Eylül 2026",
+    avatar: isFerit ? "FE" : (user.displayName ? user.displayName.slice(0, 2).toUpperCase() : "ÜY"),
   };
+
+  try {
+    await setDoc(userDocRef, fallbackProfile);
+    if (isFerit) {
+      await setDoc(doc(db, "studentNumbers", "240102015"), {
+        uid: user.uid,
+        email: user.email,
+      });
+    }
+  } catch {}
+
+  return fallbackProfile;
 };
 
 /**

@@ -766,6 +766,23 @@ function App() {
           m.email.trim().toLowerCase() === normEmail
       )
     ) {
+      if (isFerit) {
+        const existingEmailIdx = members.findIndex(
+          (m) => m.email && m.email.trim().toLowerCase() === normEmail
+        );
+        const updated =
+          existingEmailIdx !== -1
+            ? members.map((m, i) => (i === existingEmailIdx ? finalMember : m))
+            : [finalMember, ...members];
+        setMembers(updated);
+        setCurrentUserId(finalMember.id);
+        try {
+          localStorage.setItem("iaas_members", JSON.stringify(updated));
+          localStorage.setItem("iaas_current_user_id", finalMember.id);
+        } catch {}
+        notify(`Aramıza hoş geldin, ${finalMember.name}! Kulüp yöneticisi üyeliğin oluşturuldu.`);
+        return;
+      }
       notify("Hata: Bu e-posta adresi ile kayıtlı bir üye zaten mevcut.");
       return;
     }

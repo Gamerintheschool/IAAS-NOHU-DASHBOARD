@@ -167,38 +167,10 @@ export default function AuthPortal({
       name: regForm.name,
     });
 
-    // Check if email already exists locally
-    if (allKnownMembers.some((m) => m.email && m.email.trim().toLowerCase() === cleanEmail)) {
-      setError("Bu e-posta adresiyle kayıtlı bir üye zaten mevcut. Lütfen giriş yapın.");
-      return;
-    }
-
-    // Check if student number already exists with strict normalization
-    const normalizedRegStudentNo = normalizeStudentNo(regForm.studentNo);
-    const existingWithSameStudentNo = normalizedRegStudentNo
-      ? allKnownMembers.find(
-          (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normalizedRegStudentNo
-        )
-      : null;
-
-    if (existingWithSameStudentNo) {
-      const existingEmail = (existingWithSameStudentNo.email || "").trim().toLowerCase();
-      const isSameUser =
-        existingEmail === cleanEmail ||
-        (isFerit && isFeritUser(existingWithSameStudentNo));
-
-      if (!isSameUser) {
-        setError(
-          "Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın."
-        );
-        return;
-      }
-    }
-
     const nextIdNumber = allKnownMembers.length + 1;
     const memberNo = `IAAS-NÖHÜ-${String(nextIdNumber).padStart(3, "0")}`;
 
-    // 1. Firebase Etkinse Firebase Auth ve Firestore'a Kaydet
+    // 1. Firebase Etkinse Doğrudan Canlı Firebase Auth ve Firestore'a Kaydet
     if (isFirebaseConfigured()) {
       try {
         setLoading(true);
@@ -226,6 +198,38 @@ export default function AuthPortal({
         return;
       } finally {
         setLoading(false);
+      }
+    }
+
+    // 2. Firebase Yapılandırılmamışsa veya Yerel Modda İlerliyorsa Yerel Kontroller
+    // Check if email already exists locally (Ferit hesabı hariç)
+    const existingEmailMatch = allKnownMembers.find(
+      (m) => m.email && m.email.trim().toLowerCase() === cleanEmail
+    );
+    if (existingEmailMatch && (!isFerit || !isFeritUser(existingEmailMatch))) {
+      setError("Bu e-posta adresiyle kayıtlı bir üye zaten mevcut. Lütfen giriş yapın.");
+      return;
+    }
+
+    // Check if student number already exists with strict normalization
+    const normalizedRegStudentNo = normalizeStudentNo(regForm.studentNo);
+    const existingWithSameStudentNo = normalizedRegStudentNo
+      ? allKnownMembers.find(
+          (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normalizedRegStudentNo
+        )
+      : null;
+
+    if (existingWithSameStudentNo) {
+      const existingEmail = (existingWithSameStudentNo.email || "").trim().toLowerCase();
+      const isSameUser =
+        existingEmail === cleanEmail ||
+        (isFerit && isFeritUser(existingWithSameStudentNo));
+
+      if (!isSameUser) {
+        setError(
+          "Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın."
+        );
+        return;
       }
     }
 

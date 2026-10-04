@@ -75,6 +75,26 @@ export const getFirebaseErrorMessage = (error) => {
 };
 
 /**
+ * E-posta adresinin yalnızca '@ohu.edu.tr' uzantılı olup olmadığını denetler.
+ * @param {string} email
+ * @returns {{ valid: boolean, message: string }}
+ */
+export const validateOhuEmail = (email) => {
+  if (typeof email !== "string" || !email.trim()) {
+    return { valid: false, message: "Lütfen bir e-posta adresi girin." };
+  }
+  const clean = email.trim().toLowerCase();
+  const domain = "@ohu.edu.tr";
+  if (!clean.endsWith(domain) || clean.length <= domain.length) {
+    return {
+      valid: false,
+      message: "Kulüp üyeliği için yalnızca '@ohu.edu.tr' uzantılı öğrenci e-posta adresinizi kullanabilirsiniz.",
+    };
+  }
+  return { valid: true, message: "" };
+};
+
+/**
  * Firebase ile yeni üye kaydı oluşturur ve Firestore 'users' koleksiyonuna profili kaydeder.
  * @param {Object} payload
  * @returns {Promise<Object>}
@@ -88,6 +108,14 @@ export const registerWithFirebase = async ({
   department,
   phone = "",
 }) => {
+  // E-posta uzantı kontrolü (@ohu.edu.tr)
+  const emailCheck = validateOhuEmail(email);
+  if (!emailCheck.valid) {
+    const err = new Error(emailCheck.message);
+    err.code = "custom/invalid-email-domain";
+    throw err;
+  }
+
   // Şifre kuralı kontrolü
   const pwCheck = validatePassword(password);
   if (!pwCheck.valid) {

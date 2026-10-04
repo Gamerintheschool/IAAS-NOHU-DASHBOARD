@@ -706,6 +706,37 @@ test("Şifre en az 6 en fazla 12 karakter kuralına uygun olmalıdır", async ({
   await expect(page.getByRole("heading", { name: "Merhaba, Elif" })).toBeVisible();
 });
 
+test("Kayıt olurken yalnızca @ohu.edu.tr uzantılı e-posta adresleri kabul edilir", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("test_no_auth", "true");
+    localStorage.clear();
+  });
+  await page.goto("/");
+
+  const uid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Deneme Öğrenci");
+  await page.getByPlaceholder("Örn: 230405012").fill(`2704${uid.slice(-5)}`);
+  await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Bitkisel Üretim");
+  await page.getByPlaceholder("6 – 12 karakter").fill("123456");
+  await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
+
+  // 1. Gmail uzantılı e-posta ile kayıt denemesi (Engellenmeli)
+  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill("deneme@gmail.com");
+  await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
+  await expect(page.locator(".auth-error-banner")).toContainText("@ohu.edu.tr");
+
+  // 2. Hotmail uzantılı e-posta ile kayıt denemesi (Engellenmeli)
+  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill("deneme@hotmail.com");
+  await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
+  await expect(page.locator(".auth-error-banner")).toContainText("@ohu.edu.tr");
+
+  // 3. Geçerli @ohu.edu.tr uzantılı e-posta ile başarılı kayıt
+  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`deneme.${uid}@ohu.edu.tr`);
+  await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
+  await expect(page.getByRole("heading", { name: "Merhaba, Deneme" })).toBeVisible();
+});
+
+
 
 
 

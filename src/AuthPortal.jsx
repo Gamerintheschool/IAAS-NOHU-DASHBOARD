@@ -21,6 +21,7 @@ import "./auth.css";
 import { normalizeStudentNo } from "./utils.js";
 import {
   validatePassword,
+  validateOhuEmail,
   registerWithFirebase,
   loginWithFirebase,
   getFirebaseErrorMessage,
@@ -87,6 +88,12 @@ export default function AuthPortal({
       !regForm.passwordConfirm.trim()
     ) {
       setError("Lütfen zorunlu alanları (Ad Soyad, E-posta, Öğrenci No, Bölüm, Şifre) eksiksiz doldurun.");
+      return;
+    }
+
+    const emailCheck = validateOhuEmail(regForm.email);
+    if (!emailCheck.valid) {
+      setError(emailCheck.message);
       return;
     }
 
@@ -478,7 +485,7 @@ export default function AuthPortal({
                 </label>
 
                 <label>
-                  <span>Öğrenci E-postası *</span>
+                  <span>Öğrenci E-postası (@ohu.edu.tr) *</span>
                   <div className="auth-input-wrap">
                     <Mail size={16} />
                     <input

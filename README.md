@@ -19,6 +19,7 @@ npm run preview
 ## Özellikler
 
 - **Üye Ol & Giriş Portalı:**
+  - **Üniversite E-postası Kuralı:** Kulüp üyeliği için yalnızca `@ohu.edu.tr` uzantılı öğrenci e-posta adresleri kabul edilir.
   - Öğrenci numarası tekilliği ve doğrulama kontrolü.
   - **Şifre Güvenlik Kuralı:** En az 6, en fazla 12 karakter (`minLength={6}`, `maxLength={12}`).
   - Şifre göster/gizle butonları, şifre tekrarı ve kulüp tüzük onayı.

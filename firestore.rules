@@ -30,8 +30,8 @@ service cloud.firestore {
     // Aynı öğrenci numarasıyla mükerrer hesap açılmasını veritabanı seviyesinde önler
     match /studentNumbers/{studentNo} {
       allow read: isAuthenticated();
-      allow create: isAuthenticated();
-      allow update, delete: if false;
+      allow create, update: isAuthenticated();
+      allow delete: if false;
     }
 
     // 3. Etkinlikler ve Katılımcılar (events)

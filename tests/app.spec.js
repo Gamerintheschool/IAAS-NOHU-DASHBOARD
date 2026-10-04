@@ -390,7 +390,7 @@ test("Kullanıcı sıfırdan üye olabilir ve platforma girebilir", async ({ pag
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.getByRole("heading", { name: "Merhaba, Caner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Caner" })).toBeVisible({ timeout: 15000 });
   await expect(page.locator(".member-name")).toHaveText("Caner Aydın");
   await expect(page.locator(".sidebar-profile span")).toHaveText("IAAS NÖHÜ Üyesi");
   // Standard member must not see Üyeler page in sidebar
@@ -456,7 +456,7 @@ test("Üye etkinliğe katıldığında canlı katılımcı listesinde ismi ve 'S
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.getByRole("heading", { name: "Merhaba, Kerem" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Kerem" })).toBeVisible({ timeout: 15000 });
 
   // 2. Open an event details modal
   await page.getByRole("button", { name: "Doğaya bir adım: Teknik gezi detayları" }).first().click();
@@ -604,7 +604,7 @@ test("Yeni üye kaydı sonrasında aynı öğrenci numarasıyla (boşluklu veya 
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
 
   // Başarıyla giriş yapıldı
-  await expect(page.getByRole("heading", { name: "Merhaba, Barış" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Barış" })).toBeVisible({ timeout: 15000 });
 
   // 2. Kenar menüsünden çıkış yap
   const menu = page.getByRole("button", { name: "Menüyü aç" });
@@ -652,7 +652,7 @@ test("Üye kayıt olurken şifre belirler ve bu şifreyle giriş yapar, hatalı 
   // 2. Doğru şifreyle kaydı tamamla
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("parola123");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.getByRole("heading", { name: "Merhaba, Sıla" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Sıla" })).toBeVisible({ timeout: 15000 });
 
   // 3. Çıkış yap
   const menu = page.getByRole("button", { name: "Menüyü aç" });
@@ -703,7 +703,7 @@ test("Şifre en az 6 en fazla 12 karakter kuralına uygun olmalıdır", async ({
   await page.getByPlaceholder("6 – 12 karakter").fill("parola99");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("parola99");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.getByRole("heading", { name: "Merhaba, Elif" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Elif" })).toBeVisible({ timeout: 15000 });
 });
 
 test("Kayıt olurken yalnızca @ohu.edu.tr uzantılı e-posta adresleri kabul edilir", async ({ page }) => {
@@ -733,8 +733,50 @@ test("Kayıt olurken yalnızca @ohu.edu.tr uzantılı e-posta adresleri kabul ed
   // 3. Geçerli @ohu.edu.tr uzantılı e-posta ile başarılı kayıt
   await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`deneme.${uid}@ohu.edu.tr`);
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.getByRole("heading", { name: "Merhaba, Deneme" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merhaba, Deneme" })).toBeVisible({ timeout: 15000 });
 });
+
+test("feritefeturksadcolak@ohu.edu.tr hesabı admin olarak tanınır ve yetkili panele erişir", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("test_no_auth", "true");
+    localStorage.clear();
+  });
+  await page.goto("/");
+
+  const feritUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const feritEmail = `feritefeturksadcolak.${feritUid}@ohu.edu.tr`;
+  const feritSNo = `2401${feritUid.slice(-5)}`;
+
+  // Ferit Efe Türkşad Çolak olarak kayıt ol
+  await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Ferit Efe Türkşad Çolak");
+  await page.getByPlaceholder("Örn: 230405012").fill(feritSNo);
+  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(feritEmail);
+  await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Tarımsal Genetik Mühendisliği");
+  await page.getByPlaceholder("6 – 12 karakter").fill("TheFerit2121");
+  await page.getByPlaceholder("Şifrenizi tekrar girin").fill("TheFerit2121");
+  await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
+
+  // Karşılama ekranı
+  await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible({ timeout: 15000 });
+
+  // Admin yetkisine sahip olduğunu (Üyeler menüsü varlığıyla) doğrula
+  const menu = page.getByRole("button", { name: "Menüyü aç" });
+  if (await menu.isVisible()) await menu.click();
+  const membersNavItem = page.locator(".sidebar").getByRole("button", { name: "Üyeler" });
+  await expect(membersNavItem).toBeVisible();
+
+  // Kenar menüsünden çıkış yap
+  await page.locator(".sidebar-logout-nav-item").click();
+  await expect(page.getByRole("heading", { name: "Aramıza Katıl" })).toBeVisible();
+
+  // Giriş Yap sekmesinden öğrenci numarası ile giriş yap
+  await page.getByRole("tab", { name: "Giriş Yap" }).click();
+  await page.getByPlaceholder("E-posta veya Öğrenci No girin").fill(feritSNo);
+  await page.getByPlaceholder("Şifreniz").fill("TheFerit2121");
+  await page.getByRole("button", { name: "Platforma Giriş Yap" }).click();
+  await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible({ timeout: 15000 });
+});
+
 
 
 

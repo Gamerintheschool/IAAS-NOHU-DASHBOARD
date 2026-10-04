@@ -130,16 +130,25 @@ export const registerWithFirebase = async ({
 
   const cleanEmail = email.trim().toLowerCase();
   const cleanStudentNo = studentNo.trim().replace(/[^a-zA-Z0-9]/g, "");
+  const isFerit = cleanEmail === "colakferit21@gmail.com" || cleanEmail === "feritefeturksadcolak@ohu.edu.tr";
 
   // 1. Öğrenci numarası Firestore'da zaten kayıtlı mı kontrol et
   try {
     const sNoDoc = await getDoc(doc(db, "studentNumbers", cleanStudentNo));
     if (sNoDoc.exists()) {
-      const err = new Error(
-        "Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın."
-      );
-      err.code = "custom/duplicate-student-no";
-      throw err;
+      const existingData = sNoDoc.data();
+      const existingEmail = (existingData?.email || "").trim().toLowerCase();
+      const isSameUser =
+        existingEmail === cleanEmail ||
+        (isFerit && (existingEmail === "colakferit21@gmail.com" || existingEmail === "feritefeturksadcolak@ohu.edu.tr"));
+
+      if (!isSameUser) {
+        const err = new Error(
+          "Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın."
+        );
+        err.code = "custom/duplicate-student-no";
+        throw err;
+      }
     }
   } catch (e) {
     if (e.code === "custom/duplicate-student-no") throw e;
@@ -159,7 +168,6 @@ export const registerWithFirebase = async ({
 
   // 4. Firestore 'users' koleksiyonunda üye dokümanı oluştur
   const userDocRef = doc(db, "users", user.uid);
-  const isFerit = cleanEmail === "colakferit21@gmail.com";
   
   const userData = {
     uid: user.uid,
@@ -231,6 +239,21 @@ export const loginWithFirebase = async (identifier, password) => {
     } catch (e) {
       console.warn("Öğrenci no ile e-posta aranırken hata:", e);
     }
+
+    // Firestore'da henüz bulunamazsa yerel kütükten e-posta adresini çözümle
+    if (!emailToUse.includes("@")) {
+      try {
+        const stored = JSON.parse(localStorage.getItem("iaas_members")) || [];
+        const localFound = stored.find(
+          (m) =>
+            m.studentNo &&
+            m.studentNo.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === cleanNo.toLowerCase()
+        );
+        if (localFound && localFound.email) {
+          emailToUse = localFound.email.trim().toLowerCase();
+        }
+      } catch {}
+    }
   }
 
   const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
@@ -254,7 +277,10 @@ export const loginWithFirebase = async (identifier, password) => {
     uid: user.uid,
     name: user.displayName || user.email.split("@")[0],
     email: user.email,
-    role: user.email === "colakferit21@gmail.com" ? "admin" : "member",
+    role:
+      user.email === "colakferit21@gmail.com" || user.email === "feritefeturksadcolak@ohu.edu.tr"
+        ? "admin"
+        : "member",
     status: "Aktif",
   };
 };

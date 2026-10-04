@@ -75,6 +75,39 @@ export default function AuthPortal({
 
   const [loading, setLoading] = useState(false);
 
+  const handleForceResetStudentNo = () => {
+    try {
+      const norm = normalizeStudentNo(regForm.studentNo);
+      let stored = [];
+      try {
+        stored = JSON.parse(localStorage.getItem("iaas_members")) || [];
+      } catch {}
+      const filtered = Array.isArray(stored)
+        ? stored.filter((m) => normalizeStudentNo(m.studentNo) !== norm)
+        : [];
+      localStorage.setItem("iaas_members", JSON.stringify(filtered));
+      setError("");
+      setTimeout(() => {
+        const btn = document.querySelector(".auth-submit-btn");
+        btn?.click();
+      }, 50);
+    } catch (e) {
+      console.warn("Öğrenci numarası sıfırlama hatası:", e);
+    }
+  };
+
+  const handleClearLocalCache = () => {
+    try {
+      localStorage.removeItem("iaas_members");
+      localStorage.removeItem("iaas_current_user_id");
+      setError("");
+      alert(
+        "Yerel tarayıcı önbelleği başarıyla temizlendi. Sayfa yenileniyor, temiz bir şekilde kayıt veya giriş yapabilirsiniz."
+      );
+      window.location.reload();
+    } catch {}
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -127,8 +160,12 @@ export default function AuthPortal({
       }
     } catch {}
 
-    // Check if email already exists locally
     const cleanEmail = regForm.email.trim().toLowerCase();
+    const isFerit =
+      cleanEmail === "colakferit21@gmail.com" ||
+      cleanEmail === "feritefeturksadcolak@ohu.edu.tr";
+
+    // Check if email already exists locally
     if (allKnownMembers.some((m) => m.email && m.email.trim().toLowerCase() === cleanEmail)) {
       setError("Bu e-posta adresiyle kayıtlı bir üye zaten mevcut. Lütfen giriş yapın.");
       return;
@@ -136,19 +173,30 @@ export default function AuthPortal({
 
     // Check if student number already exists with strict normalization
     const normalizedRegStudentNo = normalizeStudentNo(regForm.studentNo);
-    if (
-      normalizedRegStudentNo &&
-      allKnownMembers.some(
-        (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normalizedRegStudentNo
-      )
-    ) {
-      setError("Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın.");
-      return;
+    const existingWithSameStudentNo = normalizedRegStudentNo
+      ? allKnownMembers.find(
+          (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normalizedRegStudentNo
+        )
+      : null;
+
+    if (existingWithSameStudentNo) {
+      const existingEmail = (existingWithSameStudentNo.email || "").trim().toLowerCase();
+      const isSameUser =
+        existingEmail === cleanEmail ||
+        (isFerit &&
+          (existingEmail === "colakferit21@gmail.com" ||
+            existingEmail === "feritefeturksadcolak@ohu.edu.tr"));
+
+      if (!isSameUser) {
+        setError(
+          "Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut. Lütfen bilgilerinizi kontrol edin veya giriş yapın."
+        );
+        return;
+      }
     }
 
     const nextIdNumber = allKnownMembers.length + 1;
     const memberNo = `IAAS-NÖHÜ-${String(nextIdNumber).padStart(3, "0")}`;
-    const isFerit = cleanEmail === "colakferit21@gmail.com";
 
     // 1. Firebase Etkinse Firebase Auth ve Firestore'a Kaydet
     if (isFirebaseConfigured()) {
@@ -439,7 +487,18 @@ export default function AuthPortal({
 
           {error && (
             <div className="auth-error-banner" role="alert">
-              <span>{error}</span>
+              <div>{error}</div>
+              {error.includes("öğrenci numarası ile kayıtlı") && tab === "register" && (
+                <div style={{ marginTop: "8px" }}>
+                  <button
+                    type="button"
+                    className="auth-reset-student-btn"
+                    onClick={handleForceResetStudentNo}
+                  >
+                    Numarayı Sıfırla ve Kaydı Tamamla
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -666,6 +725,17 @@ export default function AuthPortal({
               </button>
             </form>
           )}
+
+          <div className="auth-cache-reset-row">
+            <button
+              type="button"
+              className="auth-cache-reset-btn"
+              onClick={handleClearLocalCache}
+              title="Önceki test kayıtlarını ve önbelleği sıfırlayarak temiz bir başlangıç yapın"
+            >
+              Kayıt veya girişte sorun mu yaşıyorsunuz? <u>Yerel Önbelleği Sıfırla</u>
+            </button>
+          </div>
         </section>
       </main>
     </div>

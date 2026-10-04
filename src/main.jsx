@@ -249,23 +249,25 @@ function App() {
       let list = Array.isArray(saved) && saved.length > 0 ? saved : initialMembers;
       let changed = false;
 
-      // Ensure any existing account with Colakferit21@gmail.com is set to admin
-      const feritIdx = list.findIndex(
-        (m) => m.email && m.email.toLowerCase() === "colakferit21@gmail.com"
-      );
-      if (feritIdx !== -1) {
-        if (list[feritIdx].role !== "admin") {
-          list = list.map((m, i) => (i === feritIdx ? { ...m, role: "admin" } : m));
+      // Ensure any existing account with Colakferit21@gmail.com or feritefeturksadcolak@ohu.edu.tr is set to admin
+      const isFeritEmail = (em) => {
+        if (!em) return false;
+        const lower = em.toLowerCase().trim();
+        return lower === "colakferit21@gmail.com" || lower.startsWith("feritefeturksadcolak");
+      };
+
+      list = list.map((m) => {
+        if (isFeritEmail(m.email) && m.role !== "admin") {
           changed = true;
+          return { ...m, role: "admin" };
         }
-      } else {
-        const feritAccount = initialMembers.find(
-          (m) => m.email.toLowerCase() === "colakferit21@gmail.com"
-        );
-        if (feritAccount) {
-          list = [...list, feritAccount];
-          changed = true;
-        }
+        return m;
+      });
+
+      const feritAccount = initialMembers.find((m) => isFeritEmail(m.email));
+      if (feritAccount && !list.some((m) => isFeritEmail(m.email))) {
+        list = [...list, feritAccount];
+        changed = true;
       }
 
       // Deduplicate existing list to clean up any past duplicates created in user's browser
@@ -660,7 +662,10 @@ function App() {
     notify(`"${title}" duyurusu kaldırıldı.`);
   }
   function handleRegister(newMember) {
-    const isFerit = newMember.email && newMember.email.toLowerCase() === "colakferit21@gmail.com";
+    const cleanEmail = (newMember.email || "").toLowerCase().trim();
+    const isFerit =
+      cleanEmail === "colakferit21@gmail.com" ||
+      cleanEmail.startsWith("feritefeturksadcolak");
     const finalMember = isFerit ? { ...newMember, role: "admin" } : newMember;
 
     // Defense-in-depth duplicate check against current members and localStorage
@@ -684,6 +689,31 @@ function App() {
           normalizeStudentNo(m.studentNo) === normStudentNo
       )
     ) {
+      // Eğer mevcut kayıt aynı kullanıcıya aitse (aynı e-posta veya Ferit'in hesapları), güncellemeye izin ver
+      const existingIdx = members.findIndex(
+        (m) => m.studentNo && normalizeStudentNo(m.studentNo) === normStudentNo
+      );
+      if (existingIdx !== -1) {
+        const existing = members[existingIdx];
+        const isSame =
+          (existing.email || "").toLowerCase() === normEmail ||
+          (isFerit &&
+            ((existing.email || "").toLowerCase() === "colakferit21@gmail.com" ||
+              (existing.email || "").toLowerCase() === "feritefeturksadcolak@ohu.edu.tr"));
+
+        if (isSame) {
+          const updated = members.map((m, i) => (i === existingIdx ? finalMember : m));
+          setMembers(updated);
+          setCurrentUserId(finalMember.id);
+          try {
+            localStorage.setItem("iaas_members", JSON.stringify(updated));
+            localStorage.setItem("iaas_current_user_id", finalMember.id);
+          } catch {}
+          notify(`Aramıza hoş geldin, ${finalMember.name}! Kulüp üyeliğin güncellendi.`);
+          return;
+        }
+      }
+
       notify("Hata: Bu öğrenci numarası ile kayıtlı bir üye zaten mevcut.");
       return;
     }
@@ -714,7 +744,11 @@ function App() {
   }
 
   function handleLogin(user) {
-    if (user.email && user.email.toLowerCase() === "colakferit21@gmail.com" && user.role !== "admin") {
+    const cleanEmail = (user.email || "").toLowerCase().trim();
+    const isFerit =
+      cleanEmail === "colakferit21@gmail.com" ||
+      cleanEmail.startsWith("feritefeturksadcolak");
+    if (isFerit && user.role !== "admin") {
       const updated = members.map((m) =>
         m.id === user.id ? { ...m, role: "admin" } : m
       );

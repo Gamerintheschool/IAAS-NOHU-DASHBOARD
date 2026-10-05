@@ -579,12 +579,12 @@ export default function AuthPortal({
                 </label>
 
                 <label>
-                  <span>Öğrenci E-postası (@ohu.edu.tr) *</span>
+                  <span>Öğrenci E-postası (@mail.ohu.edu.tr) *</span>
                   <div className="auth-input-wrap">
                     <Mail size={16} />
                     <input
                       type="email"
-                      placeholder="ad.soyad@ohu.edu.tr"
+                      placeholder="ad.soyad@mail.ohu.edu.tr"
                       value={regForm.email}
                       onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
                       required

@@ -121,7 +121,8 @@ export const getFirebaseErrorMessage = (error) => {
 };
 
 /**
- * E-posta adresinin yalnızca '@ohu.edu.tr' uzantılı olup olmadığını denetler.
+ * E-posta adresinin yalnızca '@mail.ohu.edu.tr' uzantılı olup olmadığını denetler.
+ * Yeni üye kayıtları için '@mail.ohu.edu.tr' formatı zorunludur.
  * @param {string} email
  * @returns {{ valid: boolean, message: string }}
  */
@@ -130,11 +131,11 @@ export const validateOhuEmail = (email) => {
     return { valid: false, message: "Lütfen bir e-posta adresi girin." };
   }
   const clean = email.trim().toLowerCase();
-  const domain = "@ohu.edu.tr";
+  const domain = "@mail.ohu.edu.tr";
   if (!clean.endsWith(domain) || clean.length <= domain.length) {
     return {
       valid: false,
-      message: "Kulüp üyeliği için yalnızca '@ohu.edu.tr' uzantılı öğrenci e-posta adresinizi kullanabilirsiniz.",
+      message: "Kulüp üyeliği için yalnızca '@mail.ohu.edu.tr' uzantılı öğrenci e-posta adresinizi kullanabilirsiniz.",
     };
   }
   return { valid: true, message: "" };
@@ -154,7 +155,7 @@ export const registerWithFirebase = async ({
   department,
   phone = "",
 }) => {
-  // E-posta uzantı kontrolü (@ohu.edu.tr)
+  // E-posta uzantı kontrolü (@mail.ohu.edu.tr)
   const emailCheck = validateOhuEmail(email);
   if (!emailCheck.valid) {
     const err = new Error(emailCheck.message);
@@ -338,7 +339,7 @@ export const loginWithFirebase = async (identifier, password) => {
     // 5. Aşama: Eğer hiçbir yerde bulunamadıysa açıklayıcı hata bildir
     if (!emailToUse.includes("@")) {
       const err = new Error(
-        `"${identifier}" numaralı öğrenciye ait kayıtlı bir hesap bulunamadı. Lütfen '@ohu.edu.tr' uzantılı öğrenci e-postanız ile giriş yapmayı deneyin veya yeni üye kaydı oluşturun.`
+        `"${identifier}" numaralı öğrenciye ait kayıtlı bir hesap bulunamadı. Lütfen '@mail.ohu.edu.tr' veya '@ohu.edu.tr' uzantılı öğrenci e-postanız ile giriş yapmayı deneyin veya yeni üye kaydı oluşturun.`
       );
       err.code = "custom/student-not-found";
       throw err;

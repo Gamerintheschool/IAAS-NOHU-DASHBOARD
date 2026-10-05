@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import "./members.css";
 import { normalizeStudentNo } from "./utils.js";
+import { validateOhuEmail } from "./services/authService.js";
 import { exportAttendeesToExcel, exportAttendeesToPdf } from "./exportUtils.js";
 import {
   getEventStockImage,
@@ -172,6 +173,12 @@ export default function MembersPage({
       !newMemberForm.studentNo.trim()
     ) {
       setAddMemberError("Lütfen zorunlu alanları (Ad Soyad, E-posta, Öğrenci No) eksiksiz doldurun.");
+      return;
+    }
+
+    const emailCheck = validateOhuEmail(newMemberForm.email);
+    if (!emailCheck.valid) {
+      setAddMemberError(emailCheck.message);
       return;
     }
 
@@ -818,10 +825,10 @@ export default function MembersPage({
                   </label>
 
                   <label>
-                    Öğrenci E-postası *
+                    Öğrenci E-postası (@mail.ohu.edu.tr) *
                     <input
                       type="email"
-                      placeholder="ad.soyad@ohu.edu.tr"
+                      placeholder="ad.soyad@mail.ohu.edu.tr"
                       value={newMemberForm.email}
                       onChange={(e) =>
                         setNewMemberForm({ ...newMemberForm, email: e.target.value })

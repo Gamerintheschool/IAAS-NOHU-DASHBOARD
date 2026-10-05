@@ -385,7 +385,7 @@ test("Kullanıcı sıfırdan üye olabilir ve platforma girebilir", async ({ pag
   const uid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Caner Aydın");
   await page.getByPlaceholder("Örn: 230405012").fill(`2304${uid.slice(-5)}`);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`caner.${uid}@ohu.edu.tr`);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`caner.${uid}@mail.ohu.edu.tr`);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Tarımsal Genetik Mühendisliği");
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
@@ -451,7 +451,7 @@ test("Üye etkinliğe katıldığında canlı katılımcı listesinde ismi ve 'S
   const uid2 = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Kerem Yılmaz");
   await page.getByPlaceholder("Örn: 230405012").fill(`2304${uid2.slice(-5)}`);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`kerem.${uid2}@ohu.edu.tr`);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`kerem.${uid2}@mail.ohu.edu.tr`);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Bitkisel Üretim ve Teknolojileri");
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
@@ -533,7 +533,7 @@ test("Aynı öğrenci numarası ile tekrar kayıt olunamaz", async ({ page }) =>
   // Try to register with an existing member's student number (Deniz Yılmaz's no: 210405012)
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Test Öğrenci");
   await page.getByPlaceholder("Örn: 230405012").fill("210405012");
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill("yeni.ogrenci@ohu.edu.tr");
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill("yeni.ogrenci@mail.ohu.edu.tr");
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Bitkisel Üretim");
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
@@ -598,7 +598,7 @@ test("Yeni üye kaydı sonrasında aynı öğrenci numarasıyla (boşluklu veya 
   const dupSNo = `2404${uid3.slice(-5)}`;
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Barış Manço");
   await page.getByPlaceholder("Örn: 230405012").fill(dupSNo);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`baris.${uid3}@ohu.edu.tr`);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`baris.${uid3}@mail.ohu.edu.tr`);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Müzik ve Sanat");
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
@@ -616,7 +616,7 @@ test("Yeni üye kaydı sonrasında aynı öğrenci numarasıyla (boşluklu veya 
   // 3. Aynı öğrenci numarasını kullanarak farklı isim ve e-posta ile 2. hesap açmayı dene
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Cem Karaca");
   await page.getByPlaceholder("Örn: 230405012").fill(dupSNo);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`cem.${uid3}@ohu.edu.tr`);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`cem.${uid3}@mail.ohu.edu.tr`);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Tarımsal Genetik");
   await page.getByPlaceholder("6 – 12 karakter").fill("123456");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
@@ -638,12 +638,12 @@ test("Üye kayıt olurken şifre belirler ve bu şifreyle giriş yapar, hatalı 
 
   const uid4 = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const sNo4 = `2504${uid4.slice(-5)}`;
-  const email4 = `sila.${uid4}@ohu.edu.tr`;
+  const email4 = `sila.${uid4}@mail.ohu.edu.tr`;
 
   // 1. Şifreler eşleşmediğinde hata mesajı doğrula
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Sıla Gençoğlu");
   await page.getByPlaceholder("Örn: 230405012").fill(sNo4);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(email4);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(email4);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Biyosistem Mühendisliği");
   await page.getByPlaceholder("6 – 12 karakter").fill("parola123");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("farkliParola");
@@ -684,7 +684,7 @@ test("Şifre en az 6 en fazla 12 karakter kuralına uygun olmalıdır", async ({
   const uid5 = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Elif Kaya");
   await page.getByPlaceholder("Örn: 230405012").fill(`2604${uid5.slice(-5)}`);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`elif.${uid5}@ohu.edu.tr`);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`elif.${uid5}@mail.ohu.edu.tr`);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Biyosistem Mühendisliği");
 
   // 1. 6 karakterden kısa şifre (5 karakter) denemesi
@@ -707,7 +707,7 @@ test("Şifre en az 6 en fazla 12 karakter kuralına uygun olmalıdır", async ({
   await expect(page.getByRole("heading", { name: "Merhaba, Elif" })).toBeVisible({ timeout: 15000 });
 });
 
-test("Kayıt olurken yalnızca @ohu.edu.tr uzantılı e-posta adresleri kabul edilir", async ({ page }) => {
+test("Kayıt olurken yalnızca @mail.ohu.edu.tr uzantılı e-posta adresleri kabul edilir", async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("test_no_auth", "true");
     localStorage.clear();
@@ -722,22 +722,22 @@ test("Kayıt olurken yalnızca @ohu.edu.tr uzantılı e-posta adresleri kabul ed
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("123456");
 
   // 1. Gmail uzantılı e-posta ile kayıt denemesi (Engellenmeli)
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill("deneme@gmail.com");
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill("deneme@gmail.com");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.locator(".auth-error-banner")).toContainText("@ohu.edu.tr");
+  await expect(page.locator(".auth-error-banner")).toContainText("@mail.ohu.edu.tr");
 
-  // 2. Hotmail uzantılı e-posta ile kayıt denemesi (Engellenmeli)
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill("deneme@hotmail.com");
+  // 2. Eski @ohu.edu.tr uzantılı e-posta ile kayıt denemesi (Yeni kayıtta @mail.ohu.edu.tr zorunlu, engellenmeli)
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill("deneme@ohu.edu.tr");
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
-  await expect(page.locator(".auth-error-banner")).toContainText("@ohu.edu.tr");
+  await expect(page.locator(".auth-error-banner")).toContainText("@mail.ohu.edu.tr");
 
-  // 3. Geçerli @ohu.edu.tr uzantılı e-posta ile başarılı kayıt
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(`deneme.${uid}@ohu.edu.tr`);
+  // 3. Geçerli @mail.ohu.edu.tr uzantılı e-posta ile başarılı kayıt
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(`deneme.${uid}@mail.ohu.edu.tr`);
   await page.getByRole("button", { name: "Kulüp Üyeliğimi Başlat" }).click();
   await expect(page.getByRole("heading", { name: "Merhaba, Deneme" })).toBeVisible({ timeout: 15000 });
 });
 
-test("feritefeturksadcolak@ohu.edu.tr hesabı admin olarak tanınır ve yetkili panele erişir", async ({ page }) => {
+test("feritefeturksadcolak hesabı admin olarak tanınır ve yetkili panele erişir", async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("test_no_auth", "true");
     localStorage.clear();
@@ -745,13 +745,13 @@ test("feritefeturksadcolak@ohu.edu.tr hesabı admin olarak tanınır ve yetkili 
   await page.goto("/");
 
   const feritUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-  const feritEmail = `feritefeturksadcolak.${feritUid}@ohu.edu.tr`;
+  const feritEmail = `feritefeturksadcolak.${feritUid}@mail.ohu.edu.tr`;
   const feritSNo = `2401${feritUid.slice(-5)}`;
 
   // Ferit Efe Türkşad Çolak olarak kayıt ol
   await page.getByPlaceholder("Örn: Ahmet Yılmaz").fill("Ferit Efe Türkşad Çolak");
   await page.getByPlaceholder("Örn: 230405012").fill(feritSNo);
-  await page.getByPlaceholder("ad.soyad@ohu.edu.tr").fill(feritEmail);
+  await page.getByPlaceholder("ad.soyad@mail.ohu.edu.tr").fill(feritEmail);
   await page.getByPlaceholder("Örn: Bitkisel Üretim ve Teknolojileri / Çevre Mühendisliği").fill("Tarımsal Genetik Mühendisliği");
   await page.getByPlaceholder("6 – 12 karakter").fill("TheFerit2121");
   await page.getByPlaceholder("Şifrenizi tekrar girin").fill("TheFerit2121");

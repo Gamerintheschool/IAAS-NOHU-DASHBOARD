@@ -464,9 +464,10 @@ test("Üye etkinliğe katıldığında canlı katılımcı listesinde ismi ve 'S
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Katılımcı Listesi")).toBeVisible();
 
-  // Initially, Kerem should not be in the attendee list, but existing attendee Ahmet Çetin should be
+  // Non-admin member sees privacy protection box and other attendee names are hidden
+  await expect(dialog.locator(".modal-attendees-privacy-box")).toBeVisible();
   await expect(dialog.locator(".modal-attendee-card", { hasText: "Kerem Yılmaz" })).toHaveCount(0);
-  await expect(dialog.locator(".modal-attendee-card", { hasText: "Ahmet Çetin" })).toBeVisible();
+  await expect(dialog.locator(".modal-attendee-card", { hasText: "Ahmet Çetin" })).toHaveCount(0);
 
   // 3. Join the event
   await dialog.getByRole("button", { name: "Etkinliğe katıl" }).click();
@@ -776,6 +777,45 @@ test("feritefeturksadcolak@ohu.edu.tr hesabı admin olarak tanınır ve yetkili 
   await page.getByRole("button", { name: "Platforma Giriş Yap" }).click();
   await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible({ timeout: 15000 });
 });
+
+test("Admin kullanıcı etkinlik penceresinde katılımcı isimlerini görür ve Excel/PDF indirme butonlarına erişir", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("test_no_auth", "true");
+    localStorage.clear();
+  });
+  await page.goto("/");
+
+  // 1. Login as admin
+  await page.getByRole("tab", { name: "Giriş Yap" }).click();
+  await page.getByPlaceholder("E-posta veya Öğrenci No girin").fill("Colakferit21@gmail.com");
+  await page.getByPlaceholder("Şifreniz").fill("123456");
+  await page.getByRole("button", { name: "Platforma Giriş Yap" }).click();
+  await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible({ timeout: 15000 });
+
+  // 2. Open event modal
+  await page.getByRole("button", { name: "Doğaya bir adım: Teknik gezi detayları" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+
+  // 3. Verify Admin sees full attendee list (e.g. Ahmet Çetin) and Excel/PDF export buttons
+  await expect(dialog.getByText("Katılımcı Listesi")).toBeVisible();
+  await expect(dialog.locator(".modal-attendee-card", { hasText: "Ahmet Çetin" })).toBeVisible();
+  await expect(dialog.locator(".export-btn.export-excel")).toBeVisible();
+  await expect(dialog.locator(".export-btn.export-pdf")).toBeVisible();
+  await expect(dialog.locator(".modal-attendees-privacy-box")).toHaveCount(0);
+
+  // 4. Verify clicking Excel button triggers download
+  const downloadPromise = page.waitForEvent("download");
+  await dialog.locator(".export-btn.export-excel").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain("IAAS_NOHU");
+  expect(download.suggestedFilename()).toContain(".csv");
+
+  // Close modal
+  await dialog.getByRole("button", { name: "Pencereyi kapat" }).click();
+  await expect(dialog).not.toBeVisible();
+});
+
 
 
 

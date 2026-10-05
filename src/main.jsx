@@ -13,6 +13,7 @@ import {
   CreditCard,
   Download,
   ExternalLink,
+  FileText,
   Globe2,
   Heart,
   LayoutDashboard,
@@ -43,11 +44,17 @@ import MembersPage from "./MembersPage.jsx";
 import useAppearance from "./useAppearance.js";
 import "./appearance.css";
 import {
+  exportAttendeesToExcel,
+  exportAttendeesToPdf,
+} from "./exportUtils.js";
+import {
   normalizeStudentNo,
   isAdminUser,
   isFeritUser,
   setDynamicAdmins,
   getDynamicAdmins,
+  addDynamicAdmin,
+  removeDynamicAdmin,
 } from "./utils.js";
 import { auth, db, isFirebaseConfigured } from "./firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
@@ -351,20 +358,23 @@ function App() {
           const liveUsers = [];
           snap.forEach((docSnap) => {
             const data = docSnap.data() || {};
-            const isAdmin = isAdminUser(data);
             const email = typeof data.email === "string" ? data.email : "";
-            // Eksik alanlı kayıtlar (ör. yarım kalmış profiller) arayüzü çökertmesin diye varsayılan değerler
-            const userObj = {
+            const mergedUser = {
               ...data,
               id: docSnap.id,
-              uid: docSnap.id,
+              uid: data.uid || docSnap.id,
+              email,
+            };
+            const isAdmin = isAdminUser(mergedUser);
+            // Eksik alanlı kayıtlar (ör. yarım kalmış profiller) arayüzü çökertmesin diye varsayılan değerler
+            const userObj = {
+              ...mergedUser,
               name:
                 typeof data.name === "string" && data.name.trim()
                   ? data.name
                   : email
                     ? email.split("@")[0]
                     : "İsimsiz Üye",
-              email,
               studentNo: typeof data.studentNo === "string" ? data.studentNo : "",
               department: typeof data.department === "string" ? data.department : "",
               faculty: typeof data.faculty === "string" ? data.faculty : "",
@@ -382,13 +392,14 @@ function App() {
             prev.forEach((m) => {
               if (m.id !== "mem-ferit" && m.id !== "mem-ferit-gmail") {
                 map.set(String(m.id), m);
+                if (m.uid) map.set(String(m.uid), m);
               }
             });
             liveUsers.forEach((u) => {
               map.set(String(u.id), u);
               if (u.uid) map.set(String(u.uid), u);
             });
-            const merged = Array.from(map.values());
+            const merged = Array.from(new Set(map.values()));
             try {
               localStorage.setItem("iaas_members", JSON.stringify(merged));
             } catch {}
@@ -397,7 +408,7 @@ function App() {
         }
       },
       (err) => {
-        // İzin reddedildiyse sessizce devam et
+        console.warn("Firestore users onSnapshot uyarısı:", err);
       }
     );
 
@@ -1289,7 +1300,7 @@ function App() {
     notify("Oturum kapatıldı. Üyelik ekranına yönlendirildiniz.");
   }
 
-  function handleToggleAdmin(targetId) {
+  async function handleToggleAdmin(targetId) {
     const target = members.find(
       (m) => String(m.id) === String(targetId) || String(m.uid) === String(targetId)
     );
@@ -1304,9 +1315,10 @@ function App() {
       return;
     }
     const newRole = target.role === "admin" ? "member" : "admin";
+    const updatedTarget = { ...target, role: newRole };
     const updated = members.map((m) =>
       String(m.id) === String(targetId) || String(m.uid) === String(targetId)
-        ? { ...m, role: newRole }
+        ? updatedTarget
         : m
     );
     setMembers(updated);
@@ -1314,20 +1326,34 @@ function App() {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
     } catch {}
 
-    if (isFirebaseConfigured() && db && auth?.currentUser) {
-      const docId = target.uid || target.id;
-      // 1. users tablosunu güncelle
-      setDoc(doc(db, "users", String(docId)), { role: newRole }, { merge: true }).catch(
-        (err) => console.warn("Firestore rol güncelleme hatası:", err)
-      );
+    // Dinamik admin hafızasını hemen güncelle (sayfa yenilense dahi korunur)
+    if (newRole === "admin") {
+      addDynamicAdmin(updatedTarget);
+    } else {
+      removeDynamicAdmin(target);
+    }
 
-      // 2. admins koleksiyonunu senkronize et
-      if (newRole === "admin") {
-        setDoc(
-          doc(db, "admins", String(docId)),
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const docId = String(target.uid || target.id);
+      try {
+        // 1. users tablosunu güncelle (tüm alanları koruyarak kaydet)
+        await setDoc(
+          doc(db, "users", docId),
           {
-            uid: String(docId),
-            id: String(docId),
+            ...target,
+            id: docId,
+            uid: docId,
+            role: newRole,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        // 2. admins koleksiyonunu senkronize et
+        if (newRole === "admin") {
+          const adminData = {
+            uid: docId,
+            id: docId,
             name: target.name || "",
             email: target.email || "",
             studentNo: target.studentNo || "",
@@ -1336,13 +1362,26 @@ function App() {
             status: target.status || "Aktif",
             updatedAt: serverTimestamp(),
             grantedBy: auth.currentUser?.email || auth.currentUser?.uid || "admin",
-          },
-          { merge: true }
-        ).catch((err) => console.warn("Firestore admin ekleme hatası:", err));
-      } else {
-        deleteDoc(doc(db, "admins", String(docId))).catch((err) =>
-          console.warn("Firestore admin silme hatası:", err)
+          };
+          await setDoc(doc(db, "admins", docId), adminData, { merge: true });
+
+          if (target.email) {
+            const cleanEmailKey = target.email.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+            await setDoc(doc(db, "admins", cleanEmailKey), adminData, { merge: true }).catch(() => {});
+          }
+        } else {
+          await deleteDoc(doc(db, "admins", docId)).catch(() => {});
+          if (target.email) {
+            const cleanEmailKey = target.email.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+            await deleteDoc(doc(db, "admins", cleanEmailKey)).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.error("Firestore admin rol güncelleme hatası:", err);
+        notify(
+          `Veritabanı güncellenemedi (${err.code || err.message}). Lütfen Firestore kurallarını kontrol edin.`
         );
+        return;
       }
     }
 
@@ -1533,15 +1572,41 @@ function App() {
             <div className="attending">
               <div className="mini-avatars">
                 {cardAttendees.length > 0 ? (
-                  cardAttendees.slice(0, 3).map((att) => (
-                    <span key={att.id} title={att.name}>
-                      {att.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </span>
-                  ))
+                  isAdminUser(currentUser) ? (
+                    cardAttendees.slice(0, 3).map((att) => (
+                      <span key={att.id} title={att.name}>
+                        {(att.name || "K")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")}
+                      </span>
+                    ))
+                  ) : (
+                    cardAttendees.slice(0, 3).map((att, idx) => {
+                      const isMe = String(att.id) === String(currentUser?.id);
+                      if (isMe) {
+                        return (
+                          <span key={att.id} title="Sen" className="me-mini-avatar">
+                            {(currentUser?.name || "S")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span
+                          key={att.id || idx}
+                          title="Kayıtlı Katılımcı"
+                          className="anon-mini-avatar"
+                        >
+                          ✓
+                        </span>
+                      );
+                    })
+                  )
                 ) : (
                   <span className="empty-avatar">-</span>
                 )}
@@ -2417,8 +2482,9 @@ function App() {
                 []
               )
                 .map(String)
-                .includes(String(currentUser.id));
+                .includes(String(currentUser?.id || ""));
               const attendeeCount = modalAttendees.length;
+              const isAdmin = !!(currentUser && isAdminUser(currentUser));
 
               return (
                 <>
@@ -2472,9 +2538,33 @@ function App() {
                             {attendeeCount}
                           </span>
                         </div>
-                        <span className="attendees-quota-note">
-                          Kalan: {Math.max(0, modal.data.people - attendeeCount)} Kontenjan
-                        </span>
+                        <div className="modal-attendees-header-right">
+                          {isAdmin && attendeeCount > 0 && (
+                            <div className="attendees-export-actions">
+                              <button
+                                type="button"
+                                className="export-btn export-excel"
+                                onClick={() => exportAttendeesToExcel(modal.data, modalAttendees)}
+                                title="Katılımcı listesini Excel (CSV) olarak indir"
+                              >
+                                <Download size={13} />
+                                <span>Excel</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="export-btn export-pdf"
+                                onClick={() => exportAttendeesToPdf(modal.data, modalAttendees)}
+                                title="Katılımcı listesini PDF olarak kaydet / yazdır"
+                              >
+                                <FileText size={13} />
+                                <span>PDF</span>
+                              </button>
+                            </div>
+                          )}
+                          <span className="attendees-quota-note">
+                            Kalan: {Math.max(0, modal.data.people - attendeeCount)} Kontenjan
+                          </span>
+                        </div>
                       </div>
 
                       {attendeeCount === 0 ? (
@@ -2482,11 +2572,11 @@ function App() {
                           <Sprout size={18} />
                           <span>Henüz kayıtlı katılımcı bulunmuyor. İlk katılan sen ol!</span>
                         </div>
-                      ) : (
+                      ) : isAdmin ? (
                         <div className="modal-attendees-list">
                           {modalAttendees.map((att) => {
-                            const isMe = String(att.id) === String(currentUser.id);
-                            const initials = att.name
+                            const isMe = String(att.id) === String(currentUser?.id);
+                            const initials = (att.name || att.email || "K")
                               .split(" ")
                               .map((p) => p[0])
                               .slice(0, 2)
@@ -2512,6 +2602,40 @@ function App() {
                               </div>
                             );
                           })}
+                        </div>
+                      ) : (
+                        <div className="modal-attendees-privacy-wrap">
+                          {isEnrolled && (
+                            <div className="modal-attendees-list" style={{ marginBottom: "10px" }}>
+                              <div className="modal-attendee-card me">
+                                <div className="modal-attendee-avatar">
+                                  {(currentUser?.name || "S")
+                                    .split(" ")
+                                    .map((p) => p[0])
+                                    .slice(0, 2)
+                                    .join("")}
+                                </div>
+                                <div className="modal-attendee-info">
+                                  <div className="modal-attendee-name-row">
+                                    <span className="attendee-name">{currentUser?.name || "Kulüp Üyesi"}</span>
+                                    <span className="attendee-me-badge">Sen</span>
+                                  </div>
+                                  <span className="attendee-sub">
+                                    {currentUser?.department || currentUser?.faculty || "IAAS NÖHÜ Üyesi"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="modal-attendees-privacy-box">
+                            <div className="privacy-box-header">
+                              <ShieldCheck size={16} />
+                              <strong>Katılımcı Gizliliği & KVKK Koruması</strong>
+                            </div>
+                            <p>
+                              Katılımcı isim listesi KVKK ve kulüp gizlilik ilkeleri gereği yalnızca Kulüp Yönetimi (Admin) tarafından görüntülenebilir.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>

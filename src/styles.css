@@ -3073,7 +3073,14 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.modal-attendees-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .modal-attendees-title {
   display: flex;
@@ -3102,6 +3109,82 @@ h1 {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* Export Actions Buttons (Excel & PDF) */
+.attendees-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+.export-btn:active {
+  transform: scale(0.96);
+}
+.export-btn.export-excel {
+  background: #eef7ed;
+  color: #236b28;
+  border-color: #c3e2c1;
+}
+.export-btn.export-excel:hover {
+  background: #236b28;
+  color: #ffffff;
+  border-color: #236b28;
+}
+.export-btn.export-pdf {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.export-btn.export-pdf:hover {
+  background: #b91c1c;
+  color: #ffffff;
+  border-color: #b91c1c;
+}
+
+/* Privacy notice box for regular members */
+.modal-attendees-privacy-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-attendees-privacy-box {
+  background: #f4f8f3;
+  border: 1px solid #d9e6d7;
+  border-radius: 9px;
+  padding: 10px 13px;
+}
+.privacy-box-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d5945;
+  margin-bottom: 4px;
+}
+.privacy-box-header svg {
+  color: #2e7d32;
+  flex-shrink: 0;
+}
+.modal-attendees-privacy-box p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #4a5c4e;
+  line-height: 1.45;
+}
+
 .modal-attendees-empty {
   display: flex;
   align-items: center;
@@ -3211,7 +3294,20 @@ h1 {
   margin-top: 1px;
 }
 
-/* Dark theme for modal attendees */
+/* Event Card Mini Avatars */
+.mini-avatars .me-mini-avatar {
+  background: #1d5945 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1.5px #9ecc91;
+}
+.mini-avatars .anon-mini-avatar {
+  background: #e7ede4 !important;
+  color: #3b664d !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+}
+
+/* Dark theme for modal attendees & export actions */
 [data-theme="dark"] .modal-attendees-section {
   background: #222527;
   border-color: #353a3e;
@@ -3225,6 +3321,37 @@ h1 {
 [data-theme="dark"] .attendees-count-badge {
   background: #1a3828;
   color: #8ae0a8;
+}
+[data-theme="dark"] .export-btn.export-excel {
+  background: #173822;
+  color: #8ce3a3;
+  border-color: #2b593a;
+}
+[data-theme="dark"] .export-btn.export-excel:hover {
+  background: #25663b;
+  color: #ffffff;
+}
+[data-theme="dark"] .export-btn.export-pdf {
+  background: #3a1c1c;
+  color: #fca5a5;
+  border-color: #5c2b2b;
+}
+[data-theme="dark"] .export-btn.export-pdf:hover {
+  background: #991b1b;
+  color: #ffffff;
+}
+[data-theme="dark"] .modal-attendees-privacy-box {
+  background: #1c2220;
+  border-color: #2c3833;
+}
+[data-theme="dark"] .privacy-box-header {
+  color: #8ce3a3;
+}
+[data-theme="dark"] .privacy-box-header svg {
+  color: #68b68b;
+}
+[data-theme="dark"] .modal-attendees-privacy-box p {
+  color: #a4b5aa;
 }
 [data-theme="dark"] .modal-attendees-empty {
   background: #282b2e;
@@ -3256,6 +3383,15 @@ h1 {
 }
 [data-theme="dark"] .mini-avatars span {
   border-color: #282b2e;
+}
+[data-theme="dark"] .mini-avatars .me-mini-avatar {
+  background: #1d5945 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1.5px #439b67;
+}
+[data-theme="dark"] .mini-avatars .anon-mini-avatar {
+  background: #2d3330 !important;
+  color: #8ce3a3 !important;
 }
 
 /* ==========================================================================

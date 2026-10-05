@@ -5,7 +5,9 @@ import {
   CalendarPlus,
   Check,
   Clock3,
+  Download,
   Eye,
+  FileText,
   Globe2,
   GraduationCap,
   Mail,
@@ -27,6 +29,7 @@ import {
 } from "lucide-react";
 import "./members.css";
 import { normalizeStudentNo } from "./utils.js";
+import { exportAttendeesToExcel, exportAttendeesToPdf } from "./exportUtils.js";
 
 const NOHU_FACULTIES = [
   "Tarım Bilimleri ve Teknolojileri Fakültesi",
@@ -1125,13 +1128,36 @@ export default function MembersPage({
                 return (
                   <div className="attendees-table-wrap">
                     <div className="attendees-meta-summary">
-                      <span>
-                        Toplam Kayıtlı Üye: <strong>{attendees.length} kişi</strong>
-                      </span>
-                      <span>
-                        Kalan Kontenjan:{" "}
-                        <strong>{Math.max(0, selectedEventForAttendees.people - attendees.length)} kişi</strong>
-                      </span>
+                      <div className="attendees-summary-text">
+                        <span>
+                          Toplam Kayıtlı Üye: <strong>{attendees.length} kişi</strong>
+                        </span>
+                        <span>·</span>
+                        <span>
+                          Kalan Kontenjan:{" "}
+                          <strong>{Math.max(0, selectedEventForAttendees.people - attendees.length)} kişi</strong>
+                        </span>
+                      </div>
+                      <div className="attendees-export-actions">
+                        <button
+                          type="button"
+                          className="export-btn export-excel"
+                          onClick={() => exportAttendeesToExcel(selectedEventForAttendees, attendees)}
+                          title="Katılımcı listesini Excel (CSV) olarak indir"
+                        >
+                          <Download size={14} />
+                          <span>Excel İndir</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="export-btn export-pdf"
+                          onClick={() => exportAttendeesToPdf(selectedEventForAttendees, attendees)}
+                          title="Katılımcı listesini PDF olarak kaydet / yazdır"
+                        >
+                          <FileText size={14} />
+                          <span>PDF İndir</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="attendee-cards-list">

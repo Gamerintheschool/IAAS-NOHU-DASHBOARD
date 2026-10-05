@@ -71,6 +71,65 @@ export function setDynamicAdmins(adminsList) {
 }
 
 /**
+ * Dinamik admin hafızasına anlık olarak yeni bir yönetici ekler ve yerel önbelleğe yazar.
+ */
+export function addDynamicAdmin(item) {
+  if (!item) return;
+  if (typeof item === "string") {
+    const cl = item.trim().toLowerCase();
+    dynamicAdminSet.add(cl);
+    const digits = cl.replace(/[^a-zA-Z0-9]/g, "");
+    if (digits) dynamicAdminSet.add(digits);
+  } else if (typeof item === "object") {
+    if (item.uid) dynamicAdminSet.add(String(item.uid).trim().toLowerCase());
+    if (item.id) dynamicAdminSet.add(String(item.id).trim().toLowerCase());
+    if (item.email) dynamicAdminSet.add(String(item.email).trim().toLowerCase());
+    if (item.studentNo) dynamicAdminSet.add(normalizeStudentNo(item.studentNo));
+    if (item.cleanStudentNo) dynamicAdminSet.add(normalizeStudentNo(item.cleanStudentNo));
+    if (item.name) dynamicAdminSet.add(String(item.name).trim().toLowerCase());
+  }
+  try {
+    const existing = JSON.parse(localStorage.getItem("iaas_dynamic_admins") || "[]");
+    const updated = Array.isArray(existing) ? [...existing, item] : [item];
+    localStorage.setItem("iaas_dynamic_admins", JSON.stringify(updated));
+  } catch {}
+}
+
+/**
+ * Dinamik admin hafızasından ve yerel önbellekten bir yöneticiyi siler.
+ */
+export function removeDynamicAdmin(item) {
+  if (!item) return;
+  const toRemove = new Set();
+  if (typeof item === "string") {
+    const cl = item.trim().toLowerCase();
+    toRemove.add(cl);
+    const digits = cl.replace(/[^a-zA-Z0-9]/g, "");
+    if (digits) toRemove.add(digits);
+  } else if (typeof item === "object") {
+    if (item.uid) toRemove.add(String(item.uid).trim().toLowerCase());
+    if (item.id) toRemove.add(String(item.id).trim().toLowerCase());
+    if (item.email) toRemove.add(String(item.email).trim().toLowerCase());
+    if (item.studentNo) toRemove.add(normalizeStudentNo(item.studentNo));
+    if (item.cleanStudentNo) toRemove.add(normalizeStudentNo(item.cleanStudentNo));
+  }
+  toRemove.forEach((key) => dynamicAdminSet.delete(key));
+  try {
+    const existing = JSON.parse(localStorage.getItem("iaas_dynamic_admins") || "[]");
+    if (Array.isArray(existing)) {
+      const filtered = existing.filter((admin) => {
+        if (typeof admin === "string") return !toRemove.has(admin.trim().toLowerCase());
+        const uid = String(admin.uid || admin.id || "").toLowerCase();
+        const em = String(admin.email || "").toLowerCase();
+        const sNo = normalizeStudentNo(admin.studentNo || admin.cleanStudentNo);
+        return !toRemove.has(uid) && !toRemove.has(em) && !toRemove.has(sNo);
+      });
+      localStorage.setItem("iaas_dynamic_admins", JSON.stringify(filtered));
+    }
+  } catch {}
+}
+
+/**
  * Mevcut dinamik admin listesini döndürür.
  */
 export function getDynamicAdmins() {

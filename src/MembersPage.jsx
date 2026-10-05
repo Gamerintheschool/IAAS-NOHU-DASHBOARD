@@ -10,6 +10,7 @@ import {
   FileText,
   Globe2,
   GraduationCap,
+  Image as ImageIcon,
   Mail,
   MapPin,
   Megaphone,
@@ -30,6 +31,12 @@ import {
 import "./members.css";
 import { normalizeStudentNo } from "./utils.js";
 import { exportAttendeesToExcel, exportAttendeesToPdf } from "./exportUtils.js";
+import {
+  getEventStockImage,
+  normalizeEventImage,
+  STOCK_IMAGES_BY_CATEGORY,
+  ALL_STOCK_PRESETS,
+} from "./eventImages.js";
 
 const NOHU_FACULTIES = [
   "Tarım Bilimleri ve Teknolojileri Fakültesi",
@@ -42,7 +49,15 @@ const NOHU_FACULTIES = [
   "Diğer",
 ];
 
-const EVENT_CATEGORIES = ["Teknik Gezi", "Atölye", "Buluşma", "Konferans", "Seminer"];
+const EVENT_CATEGORIES = [
+  "Teknik Gezi",
+  "Atölye",
+  "Buluşma",
+  "Seçim / Genel Kurul",
+  "Seminer",
+  "Sosyal",
+  "Uluslararası",
+];
 const EVENT_COLORS = [
   { label: "Yeşil (Doğa / Gezi)", value: "green" },
   { label: "Turuncu (Atölye / Uygulama)", value: "orange" },
@@ -102,6 +117,7 @@ export default function MembersPage({
     place: "NÖHÜ Kongre ve Kültür Merkezi",
     people: 30,
     description: "",
+    image: "",
   });
 
   // --- Announcement Tab States ---
@@ -223,6 +239,10 @@ export default function MembersPage({
     e.preventDefault();
     if (!newEventForm.title.trim() || !newEventForm.description.trim()) return;
 
+    const assignedImage =
+      newEventForm.image ||
+      getEventStockImage(newEventForm.category, newEventForm.title);
+
     const newEvent = {
       id: Date.now(),
       title: newEventForm.title.trim(),
@@ -235,12 +255,7 @@ export default function MembersPage({
       place: newEventForm.place.trim(),
       people: parseInt(newEventForm.people, 10) || 25,
       description: newEventForm.description.trim(),
-      image:
-        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=" +
-        encodeURIComponent(
-          "Documentary photograph of university agriculture students in outdoor field trip, natural warm lighting, editorial style",
-        ) +
-        "&image_size=landscape_16_9",
+      image: assignedImage,
     };
 
     onAddEvent(newEvent);
@@ -256,6 +271,7 @@ export default function MembersPage({
       place: "NÖHÜ Kongre ve Kültür Merkezi",
       people: 30,
       description: "",
+      image: "",
     });
   };
 
@@ -933,9 +949,14 @@ export default function MembersPage({
                     Kategori *
                     <select
                       value={newEventForm.category}
-                      onChange={(e) =>
-                        setNewEventForm({ ...newEventForm, category: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const newCat = e.target.value;
+                        setNewEventForm((prev) => ({
+                          ...prev,
+                          category: newCat,
+                          image: getEventStockImage(newCat, prev.title),
+                        }));
+                      }}
                       className="modal-select"
                     >
                       {EVENT_CATEGORIES.map((cat) => (
@@ -962,6 +983,70 @@ export default function MembersPage({
                       ))}
                     </select>
                   </label>
+                </div>
+
+                {/* Stock Image Selection / Preview Section */}
+                <div className="modal-field-full event-image-picker-wrap">
+                  <div className="image-picker-header">
+                    <label>
+                      <ImageIcon size={14} />
+                      <span>Etkinlik Kapak Görseli</span>
+                    </label>
+                    <span className="image-auto-badge">✨ Otomatik Stok Görsel Aktif</span>
+                  </div>
+
+                  <div className="image-preview-card">
+                    <img
+                      src={
+                        newEventForm.image ||
+                        getEventStockImage(newEventForm.category, newEventForm.title)
+                      }
+                      alt="Kapak Görseli Önizleme"
+                      className="image-preview-display"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getEventStockImage(
+                          newEventForm.category,
+                          newEventForm.title
+                        );
+                      }}
+                    />
+                    <div className="image-preview-tag">
+                      <span>{newEventForm.category} Teması</span>
+                    </div>
+                  </div>
+
+                  <div className="stock-thumbs-box">
+                    <div className="stock-thumbs-title">
+                      <span>Önerilen Stok Fotoğraflar (Seçmek için tıklayın):</span>
+                    </div>
+                    <div className="stock-thumbs-row">
+                      {(
+                        STOCK_IMAGES_BY_CATEGORY[newEventForm.category] ||
+                        STOCK_IMAGES_BY_CATEGORY["Atölye"]
+                      ).map((stock) => {
+                        const currentUrl =
+                          newEventForm.image ||
+                          getEventStockImage(newEventForm.category, newEventForm.title);
+                        const isSelected = currentUrl === stock.url;
+                        return (
+                          <button
+                            type="button"
+                            key={stock.id}
+                            className={`stock-thumb-card ${isSelected ? "active" : ""}`}
+                            onClick={() =>
+                              setNewEventForm((prev) => ({ ...prev, image: stock.url }))
+                            }
+                            title={stock.label}
+                          >
+                            <img src={stock.url} alt={stock.label} />
+                            <span className="stock-thumb-title">{stock.label}</span>
+                            {isSelected && <span className="stock-thumb-check">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="form-grid">

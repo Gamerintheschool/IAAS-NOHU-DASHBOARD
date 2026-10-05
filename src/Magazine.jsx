@@ -8,9 +8,6 @@ import {
 } from "lucide-react";
 import "./magazine.css";
 
-const editorialImage = (prompt) =>
-  `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=landscape_16_9`;
-
 export const magazineArticles = [
   {
     id: "yavaslamak",
@@ -21,9 +18,7 @@ export const magazineArticles = [
     author: "IAAS Editör",
     date: "2 Ekim 2026",
     minutes: 3,
-    image: editorialImage(
-      "Atmospheric editorial landscape photograph of a winding path through a misty forest with tall pine trees, deep emerald foliage, a lone small hiker in the distance, soft golden morning light, cinematic natural photography, sophisticated travel magazine cover, no text",
-    ),
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80",
     imageAlt: "Sabah sisinin içinde uzanan orman patikası",
     paragraphs: [
       "Bir yürüyüşü değerli kılan her zaman vardığımız yer değil. Bazen yolun kenarındaki bir yaprağın rengi, rüzgârla değişen bir koku ya da ilk kez duyduğumuz bir ses. Yavaşladığımızda, her gün yanından geçtiğimiz yerlerin bile bize yeni bir şey söylediğini fark ediyoruz.",
@@ -40,9 +35,7 @@ export const magazineArticles = [
     author: "IAAS Editör",
     date: "1 Ekim 2026",
     minutes: 2,
-    image: editorialImage(
-      "Candid editorial photograph of university students having coffee together at an outdoor campus cafe, warm autumn afternoon sunlight, thoughtful relaxed conversation, natural earthy colors, premium lifestyle magazine photography, no text",
-    ),
+    image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
     imageAlt: "Kampüste açık havada kahve içip sohbet eden öğrenciler",
     paragraphs: [
       "Takvimimiz derslerle ve teslim tarihleriyle doluyken molaları kolayca gereksiz görebiliyoruz. Oysa bir arkadaşla yapılan kısa bir sohbet, aynı soruya başka bir açıdan bakmamızı sağlayabilir. Yeni bir fikir için bazen masadan kalkmak gerekir.",
@@ -59,9 +52,7 @@ export const magazineArticles = [
     author: "IAAS Editör",
     date: "29 Eylül 2026",
     minutes: 2,
-    image: editorialImage(
-      "Beautiful editorial closeup photograph of a tiny fresh green seedling growing in a handmade terracotta pot on a sunny windowsill, soft side light, textured charcoal wall background, minimalist sustainable lifestyle magazine photography, no text",
-    ),
+    image: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80",
     imageAlt: "Pencere önündeki toprak saksıda büyüyen yeşil filiz",
     paragraphs: [
       "Bir tohumu toprağa bıraktığımızda sonucunu hemen göremeyiz. Sulamak, ışığını izlemek ve beklemek gerekir. Bu küçük süreç, her gelişmenin anında görünür olmak zorunda olmadığını hatırlatır.",
@@ -78,9 +69,7 @@ export const magazineArticles = [
     author: "IAAS Editör",
     date: "27 Eylül 2026",
     minutes: 2,
-    image: editorialImage(
-      "Editorial still life photograph of a well used canvas backpack, open notebook and reusable steel water bottle on a wooden bench overlooking a calm lake, muted autumn colors, soft daylight, premium slow living magazine, no text",
-    ),
+    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80",
     imageAlt:
       "Göl kenarındaki bankta sırt çantası, defter ve yeniden kullanılabilir matara",
     paragraphs: [

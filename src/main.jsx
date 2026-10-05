@@ -48,6 +48,10 @@ import {
   exportAttendeesToPdf,
 } from "./exportUtils.js";
 import {
+  getEventStockImage,
+  normalizeEventImage,
+} from "./eventImages.js";
+import {
   normalizeStudentNo,
   isAdminUser,
   isFeritUser,
@@ -71,21 +75,11 @@ import {
 } from "firebase/firestore";
 import { logoutWithFirebase, cacheStudentEmail } from "./services/authService.js";
 
-const image = (prompt, size = "landscape_16_9") =>
-  `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`;
 const images = {
-  hero: image(
-    "Editorial fine art photograph of rolling green agricultural fields and forested hills in Tuscany at soft morning light, rich dark forest green tones, beautiful atmospheric countryside, natural film grain, no text, panoramic landscape",
-  ),
-  field: image(
-    "Documentary photograph of a small group of university agriculture students walking through a lush green tea plantation in Turkey, warm sunlight, candid outdoor field trip, realistic editorial photography",
-  ),
-  workshop: image(
-    "Close up editorial photograph of hands planting a small green seedling in rich dark soil in a terracotta pot, wooden table in a sunny greenhouse, warm natural light, sustainable gardening workshop",
-  ),
-  meeting: image(
-    "Candid editorial photograph of a diverse group of university students sitting around a wooden table in a warm modern cafe, smiling and talking, afternoon sunlight, community meeting",
-  ),
+  hero: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=80",
+  field: "https://images.unsplash.com/photo-1592417817098-8f3d69104a47?auto=format&fit=crop&w=1200&q=80",
+  workshop: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80",
+  meeting: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
 };
 const initialEvents = [
   {
@@ -761,6 +755,7 @@ function App() {
             ...data,
             title: typeof data.title === "string" && data.title.trim() ? data.title : "Etkinlik",
             id: isNaN(Number(docSnap.id)) ? docSnap.id : Number(docSnap.id),
+            image: normalizeEventImage(data.image, data.category, data.title),
           };
           liveEvents.push(eventItem);
           if (Array.isArray(data.attendees)) {
@@ -1078,20 +1073,24 @@ function App() {
   }
 
   function handleAddEvent(newEvent) {
-    const updated = [newEvent, ...eventsList];
+    const cleanEvent = {
+      ...newEvent,
+      image: normalizeEventImage(newEvent.image, newEvent.category, newEvent.title),
+    };
+    const updated = [cleanEvent, ...eventsList];
     setEventsList(updated);
     try {
       localStorage.setItem("iaas_events_data", JSON.stringify(updated));
     } catch {}
 
     if (isFirebaseConfigured() && db && auth?.currentUser) {
-      const cleanEvent = { ...newEvent };
-      cleanEvent.attendees = cleanEvent.attendees || [];
-      setDoc(doc(db, "events", String(newEvent.id)), cleanEvent).catch((err) =>
+      const eventToSave = { ...cleanEvent };
+      eventToSave.attendees = eventToSave.attendees || [];
+      setDoc(doc(db, "events", String(cleanEvent.id)), eventToSave).catch((err) =>
         console.warn("Firestore etkinlik ekleme hatası:", err)
       );
     }
-    notify(`"${newEvent.title}" etkinliği oluşturuldu.`);
+    notify(`"${cleanEvent.title}" etkinliği oluşturuldu.`);
   }
 
   function handleDeleteEvent(eventId, title) {
@@ -1534,14 +1533,23 @@ function App() {
       .includes(String(currentUser?.id || ""));
     const enrolledCount = cardAttendees.length;
 
+    const eventImage = normalizeEventImage(event.image, event.category, event.title);
+
     return (
       <article className="event-card" key={event.id}>
         <button
           className="event-image"
-          onClick={() => setModal({ type: "event", data: event })}
+          onClick={() => setModal({ type: "event", data: { ...event, image: eventImage } })}
           aria-label={`${event.title} detayları`}
         >
-          <img src={event.image} alt={event.title} />
+          <img
+            src={eventImage}
+            alt={event.title}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = getEventStockImage(event.category, event.title);
+            }}
+          />
           <span className="date-badge">
             <strong>{event.day}</strong>
             <span>{event.month}</span>
@@ -2486,12 +2494,25 @@ function App() {
               const attendeeCount = modalAttendees.length;
               const isAdmin = !!(currentUser && isAdminUser(currentUser));
 
+              const modalEventImage = normalizeEventImage(
+                modal.data.image,
+                modal.data.category,
+                modal.data.title
+              );
+
               return (
                 <>
                   <img
                     className="modal-event-image"
-                    src={modal.data.image}
+                    src={modalEventImage}
                     alt={modal.data.title}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = getEventStockImage(
+                        modal.data.category,
+                        modal.data.title
+                      );
+                    }}
                   />
                   <div className="modal-content">
                     <span className={`category ${modal.data.color}`}>

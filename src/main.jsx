@@ -42,11 +42,27 @@ import AuthPortal from "./AuthPortal.jsx";
 import MembersPage from "./MembersPage.jsx";
 import useAppearance from "./useAppearance.js";
 import "./appearance.css";
-import { normalizeStudentNo, isAdminUser, isFeritUser } from "./utils.js";
+import {
+  normalizeStudentNo,
+  isAdminUser,
+  isFeritUser,
+  setDynamicAdmins,
+  getDynamicAdmins,
+} from "./utils.js";
 import { auth, db, isFirebaseConfigured } from "./firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs } from "firebase/firestore";
-import { logoutWithFirebase } from "./services/authService.js";
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  onSnapshot,
+  getDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { logoutWithFirebase, cacheStudentEmail } from "./services/authService.js";
 
 const image = (prompt, size = "landscape_16_9") =>
   `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`;
@@ -323,23 +339,42 @@ function App() {
     }
   });
 
-  // Canlı Firebase bağlıyken Firestore 'users' koleksiyonundaki gerçek üyeleri kütüğe aktar
+  // Canlı Firebase bağlıyken Firestore 'users' koleksiyonunu gerçek zamanlı dinle (Tüm hesaplarda anlık üye senkronizasyonu)
   useEffect(() => {
     if (!isFirebaseConfigured() || !db || !currentUserId) return;
-    async function syncFirestoreUsers() {
-      try {
-        const snap = await getDocs(collection(db, "users"));
+    if (typeof window !== "undefined" && (window.__PLAYWRIGHT_TEST__ || navigator.webdriver)) return;
+
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snap) => {
         if (!snap.empty) {
           const liveUsers = [];
           snap.forEach((docSnap) => {
-            const data = docSnap.data();
+            const data = docSnap.data() || {};
             const isAdmin = isAdminUser(data);
-            liveUsers.push({
+            const email = typeof data.email === "string" ? data.email : "";
+            // Eksik alanlı kayıtlar (ör. yarım kalmış profiller) arayüzü çökertmesin diye varsayılan değerler
+            const userObj = {
               ...data,
               id: docSnap.id,
               uid: docSnap.id,
+              name:
+                typeof data.name === "string" && data.name.trim()
+                  ? data.name
+                  : email
+                    ? email.split("@")[0]
+                    : "İsimsiz Üye",
+              email,
+              studentNo: typeof data.studentNo === "string" ? data.studentNo : "",
+              department: typeof data.department === "string" ? data.department : "",
+              faculty: typeof data.faculty === "string" ? data.faculty : "",
               role: isAdmin ? "admin" : (data.role || "member"),
-            });
+            };
+            liveUsers.push(userObj);
+            // Öğrenci numarası - e-posta önbelleğini güncelle
+            if (userObj.studentNo && userObj.email) {
+              cacheStudentEmail(userObj.studentNo, userObj.email);
+            }
           });
 
           setMembers((prev) => {
@@ -351,6 +386,7 @@ function App() {
             });
             liveUsers.forEach((u) => {
               map.set(String(u.id), u);
+              if (u.uid) map.set(String(u.uid), u);
             });
             const merged = Array.from(map.values());
             try {
@@ -359,14 +395,118 @@ function App() {
             return merged;
           });
         }
-      } catch (err) {
+      },
+      (err) => {
         // İzin reddedildiyse sessizce devam et
       }
-    }
-    syncFirestoreUsers();
+    );
+
+    return () => unsubscribe();
   }, [currentUserId]);
 
-  // Canlı Firebase yapılandırılmışken Firebase Auth oturumu yoksa oturumu sıfırla ve AuthPortal'ı aç
+  // Canlı Firebase bağlıyken Firestore 'admins' koleksiyonunu gerçek zamanlı dinle (Admin veritabanı senkronizasyonu)
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db) return;
+    if (typeof window !== "undefined" && (window.__PLAYWRIGHT_TEST__ || navigator.webdriver)) return;
+
+    let isSeeding = false;
+    const unsubscribe = onSnapshot(
+      collection(db, "admins"),
+      async (snapshot) => {
+        if (!snapshot.empty) {
+          const liveAdmins = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() || {};
+            liveAdmins.push({
+              ...data,
+              id: docSnap.id,
+              uid: data.uid || docSnap.id,
+              email: data.email || "",
+              studentNo: data.studentNo || "",
+              cleanStudentNo: data.cleanStudentNo || "",
+              name: data.name || "",
+              role: "admin",
+            });
+          });
+
+          setDynamicAdmins(liveAdmins);
+
+          // Üye listesindeki rolleri anlık admin listesine göre senkronize et
+          setMembers((prev) => {
+            let hasChanges = false;
+            const updated = prev.map((m) => {
+              const shouldBeAdmin = isAdminUser(m);
+              if (shouldBeAdmin && m.role !== "admin") {
+                hasChanges = true;
+                return { ...m, role: "admin" };
+              }
+              return m;
+            });
+            if (hasChanges) {
+              try {
+                localStorage.setItem("iaas_members", JSON.stringify(updated));
+              } catch {}
+              return updated;
+            }
+            return prev;
+          });
+        } else if (!snapshot.metadata.fromCache && !isSeeding && auth?.currentUser) {
+          // Eğer Firestore'da admins koleksiyonu henüz boşsa, ana yöneticileri veritabanına otomatik tohumla
+          isSeeding = true;
+          try {
+            const curUid = auth.currentUser.uid;
+            const curEmail = (auth.currentUser.email || "").toLowerCase();
+            const curName =
+              auth.currentUser.displayName ||
+              (curEmail.includes("admintr") ? "AdminTR" : "Yönetici");
+
+            await setDoc(
+              doc(db, "admins", curUid),
+              {
+                uid: curUid,
+                id: curUid,
+                name: curName,
+                email: curEmail,
+                role: "admin",
+                status: "Aktif",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+
+            if (curEmail !== "admintr@ohu.edu.tr") {
+              await setDoc(
+                doc(db, "admins", "admintr_primary"),
+                {
+                  name: "AdminTR",
+                  email: "admintr@ohu.edu.tr",
+                  studentNo: "240102020",
+                  cleanStudentNo: "240102020",
+                  role: "admin",
+                  status: "Aktif",
+                  isPrimaryAdmin: true,
+                  createdAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            }
+          } catch (seedErr) {
+            console.warn("Admins Firestore tohumlama hatası:", seedErr);
+          } finally {
+            isSeeding = false;
+          }
+        }
+      },
+      (err) => {
+        // İzin reddedildiyse sessizce devam et
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUserId]);
+
+  // Canlı Firebase yapılandırılmışken Firebase Auth oturumunu dinle
   useEffect(() => {
     if (isFirebaseConfigured() && auth) {
       const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
@@ -378,6 +518,33 @@ function App() {
               localStorage.removeItem("iaas_current_user_id");
               localStorage.removeItem("iaas_current_user");
             } catch {}
+          }
+        } else {
+          const uid = fbUser.uid;
+          setCurrentUserId(uid);
+          try {
+            localStorage.setItem("iaas_current_user_id", uid);
+          } catch {}
+
+          if (db) {
+            getDoc(doc(db, "users", uid))
+              .then((snap) => {
+                if (snap.exists()) {
+                  const data = snap.data();
+                  const isAdmin = isAdminUser({ ...data, email: fbUser.email, uid });
+                  const fullUser = {
+                    ...data,
+                    id: uid,
+                    uid,
+                    role: isAdmin ? "admin" : (data.role || "member"),
+                  };
+                  setCurrentUserSession(fullUser);
+                  try {
+                    localStorage.setItem("iaas_current_user", JSON.stringify(fullUser));
+                  } catch {}
+                }
+              })
+              .catch(() => {});
           }
         }
       });
@@ -503,6 +670,182 @@ function App() {
       return initialAnnouncements;
     }
   });
+
+  // Dinleyiciler için kararlı anahtarlar: admin hesaplarında currentUser her render'da yeni nesne
+  // olduğundan doğrudan bağımlılık olarak kullanılırsa dinleyici sürekli kapanıp açılır (render döngüsü).
+  const syncUserKey = currentUser?.id ? String(currentUser.id) : null;
+  const syncIsAdmin = !!(currentUser && isAdminUser(currentUser));
+  const syncIsAdminRef = useRef(syncIsAdmin);
+  syncIsAdminRef.current = syncIsAdmin;
+  const eventAttendeesRef = useRef(eventAttendees);
+  eventAttendeesRef.current = eventAttendees;
+
+  // Gerçek zamanlı Firestore 'events' senkronizasyonu (Tüm hesaplarda ve tarayıcılarda canlı veri)
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db) return;
+    if (typeof window !== "undefined" && (window.__PLAYWRIGHT_TEST__ || navigator.webdriver)) return;
+
+    let isSeeding = false;
+    const unsubscribe = onSnapshot(
+      collection(db, "events"),
+      async (snapshot) => {
+        const eventDocs = snapshot.docs.filter((d) => d.id !== "_meta");
+        const hasMeta = snapshot.docs.some((d) => d.id === "_meta");
+
+        // Eğer Firestore'da henüz etkinlik veya _meta dokümanı yoksa:
+        // Giriş yapmış admin kullanıcısı varsa, adminin tarayıcısındaki etkinlikleri (örneğin Ferit'in test etkinliği) Firestore'a yükle!
+        if (eventDocs.length === 0 && !hasMeta) {
+          // Önbellekten gelen boş anlık görüntü sunucunun cevabı değildir; yoksay
+          if (snapshot.metadata.fromCache) return;
+          const seededFlag = localStorage.getItem("iaas_events_synced_v3");
+          let localEvents = null;
+          try {
+            localEvents = JSON.parse(localStorage.getItem("iaas_events_data"));
+          } catch {}
+          const hasLocalEvents = Array.isArray(localEvents) && localEvents.length > 0;
+          // Sadece adminin tarayıcısında gerçekten kayıtlı yerel etkinlikler varsa buluta aktar.
+          // Varsayılan örnek etkinlikler (initialEvents) asla geri yüklenmez.
+          if (!seededFlag && !isSeeding && syncIsAdminRef.current && hasLocalEvents) {
+            isSeeding = true;
+            try {
+              const currentAtt = eventAttendeesRef.current || {};
+              for (const ev of localEvents) {
+                if (!ev || ev.id === "_meta" || ev.id === undefined) continue;
+                const att = (
+                  currentAtt[ev.id] ||
+                  currentAtt[String(ev.id)] ||
+                  []
+                ).map(String);
+                await setDoc(doc(db, "events", String(ev.id)), {
+                  ...ev,
+                  attendees: att,
+                });
+              }
+              await setDoc(doc(db, "events", "_meta"), {
+                initialized: true,
+                createdAt: serverTimestamp(),
+              });
+              localStorage.setItem("iaas_events_synced_v3", "true");
+            } catch (seedErr) {
+              console.warn("Etkinlik Firestore tohumlama hatası:", seedErr);
+            } finally {
+              isSeeding = false;
+            }
+            return;
+          }
+          // Bulutta etkinlik yok: bayat yerel listeyi göstermek yerine boş liste göster.
+          // (Yerel kayıt silinmez; adminin aktarılmamış etkinlikleri korunur.)
+          setEventsList([]);
+          return;
+        }
+
+        // Firestore'da veri mevcut; yerel veriyi bulutla eşitle
+        localStorage.setItem("iaas_events_synced_v3", "true");
+        const liveEvents = [];
+        const liveAttendees = {};
+
+        eventDocs.forEach((docSnap) => {
+          const data = docSnap.data() || {};
+          const eventItem = {
+            ...data,
+            title: typeof data.title === "string" && data.title.trim() ? data.title : "Etkinlik",
+            id: isNaN(Number(docSnap.id)) ? docSnap.id : Number(docSnap.id),
+          };
+          liveEvents.push(eventItem);
+          if (Array.isArray(data.attendees)) {
+            liveAttendees[eventItem.id] = data.attendees.map(String);
+            liveAttendees[String(eventItem.id)] = data.attendees.map(String);
+          }
+        });
+
+        setEventsList(liveEvents);
+        setEventAttendees((prev) => ({
+          ...prev,
+          ...liveAttendees,
+        }));
+
+        try {
+          localStorage.setItem("iaas_events_data", JSON.stringify(liveEvents));
+          localStorage.setItem(
+            "iaas_event_attendees",
+            JSON.stringify({ ...(eventAttendeesRef.current || {}), ...liveAttendees })
+          );
+        } catch {}
+      },
+      (err) => {
+        console.warn("Firestore events onSnapshot hatası:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Gerçek zamanlı Firestore 'announcements' senkronizasyonu
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db) return;
+    if (typeof window !== "undefined" && (window.__PLAYWRIGHT_TEST__ || navigator.webdriver)) return;
+
+    let isSeeding = false;
+    const unsubscribe = onSnapshot(
+      collection(db, "announcements"),
+      async (snapshot) => {
+        const annDocs = snapshot.docs.filter((d) => d.id !== "_meta");
+        const hasMeta = snapshot.docs.some((d) => d.id === "_meta");
+
+        if (annDocs.length === 0 && !hasMeta) {
+          if (snapshot.metadata.fromCache) return;
+          const seededFlag = localStorage.getItem("iaas_announcements_synced_v3");
+          let localAnn = null;
+          try {
+            localAnn = JSON.parse(localStorage.getItem("iaas_announcements_data"));
+          } catch {}
+          const hasLocalAnn = Array.isArray(localAnn) && localAnn.length > 0;
+          if (!seededFlag && !isSeeding && syncIsAdminRef.current && hasLocalAnn) {
+            isSeeding = true;
+            try {
+              for (const a of localAnn) {
+                if (!a || a.id === "_meta" || a.id === undefined) continue;
+                const { icon, ...cleanA } = a;
+                await setDoc(doc(db, "announcements", String(a.id)), cleanA);
+              }
+              await setDoc(doc(db, "announcements", "_meta"), {
+                initialized: true,
+                createdAt: serverTimestamp(),
+              });
+              localStorage.setItem("iaas_announcements_synced_v3", "true");
+            } catch (seedErr) {
+              console.warn("Duyuru Firestore tohumlama hatası:", seedErr);
+            } finally {
+              isSeeding = false;
+            }
+            return;
+          }
+          setAnnouncementsList([]);
+          return;
+        }
+
+        localStorage.setItem("iaas_announcements_synced_v3", "true");
+        const liveAnnouncements = [];
+        annDocs.forEach((docSnap) => {
+          const data = docSnap.data();
+          liveAnnouncements.push({
+            ...data,
+            id: docSnap.id,
+          });
+        });
+
+        setAnnouncementsList(liveAnnouncements);
+        try {
+          localStorage.setItem("iaas_announcements_data", JSON.stringify(liveAnnouncements));
+        } catch {}
+      },
+      (err) => {
+        console.warn("Firestore announcements onSnapshot hatası:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [syncUserKey, syncIsAdmin]);
 
   useEffect(() => {
     if (!currentUser || !currentUser.id) return;
@@ -642,7 +985,11 @@ function App() {
       eventAttendees[Number(id)] ||
       []
     ).map(String);
-    const userIdStr = String(currentUser.id);
+    const userIdStr = String(currentUser?.id || "");
+    if (!userIdStr) {
+      notify("Etkinliğe kaydolmak için lütfen önce giriş yapın.");
+      return;
+    }
     const isEnrolled = currentAttendees.includes(userIdStr);
 
     const nextAttendeesForEvent = isEnrolled
@@ -672,6 +1019,14 @@ function App() {
     try {
       localStorage.setItem("iaas_event_attendees", JSON.stringify(updatedAttendees));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      setDoc(
+        doc(db, "events", eventIdStr),
+        { attendees: nextAttendeesForEvent },
+        { merge: true }
+      ).catch((err) => console.warn("Firestore etkinlik katılım güncelleme hatası:", err));
+    }
   }
 
   function handleRemoveAttendee(eventId, memberId) {
@@ -690,7 +1045,7 @@ function App() {
       [eventIdStr]: nextAttendees,
     };
     setEventAttendees(updatedAttendees);
-    if (memberIdStr === String(currentUser.id)) {
+    if (memberIdStr === String(currentUser?.id)) {
       const nextJoined = joined.filter((x) => String(x) !== eventIdStr);
       setJoined(nextJoined);
       try {
@@ -700,6 +1055,14 @@ function App() {
     try {
       localStorage.setItem("iaas_event_attendees", JSON.stringify(updatedAttendees));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      setDoc(
+        doc(db, "events", eventIdStr),
+        { attendees: nextAttendees },
+        { merge: true }
+      ).catch((err) => console.warn("Firestore katılımcı silme hatası:", err));
+    }
     notify("Katılımcı etkinlik listesinden çıkarıldı.");
   }
 
@@ -709,22 +1072,38 @@ function App() {
     try {
       localStorage.setItem("iaas_events_data", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const cleanEvent = { ...newEvent };
+      cleanEvent.attendees = cleanEvent.attendees || [];
+      setDoc(doc(db, "events", String(newEvent.id)), cleanEvent).catch((err) =>
+        console.warn("Firestore etkinlik ekleme hatası:", err)
+      );
+    }
     notify(`"${newEvent.title}" etkinliği oluşturuldu.`);
   }
 
   function handleDeleteEvent(eventId, title) {
-    const updated = eventsList.filter((e) => e.id !== eventId);
+    const eventIdStr = String(eventId);
+    const updated = eventsList.filter((e) => String(e.id) !== eventIdStr);
     setEventsList(updated);
     const updatedAttendees = { ...eventAttendees };
     delete updatedAttendees[eventId];
+    delete updatedAttendees[eventIdStr];
     setEventAttendees(updatedAttendees);
-    const nextJoined = joined.filter((id) => id !== eventId);
+    const nextJoined = joined.filter((id) => String(id) !== eventIdStr);
     setJoined(nextJoined);
     try {
       localStorage.setItem("iaas_events_data", JSON.stringify(updated));
       localStorage.setItem("iaas_event_attendees", JSON.stringify(updatedAttendees));
       localStorage.setItem("iaas-events", JSON.stringify(nextJoined));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      deleteDoc(doc(db, "events", eventIdStr)).catch((err) =>
+        console.warn("Firestore etkinlik silme hatası:", err)
+      );
+    }
     notify(`"${title}" etkinliği silindi.`);
   }
 
@@ -734,17 +1113,31 @@ function App() {
     try {
       localStorage.setItem("iaas_announcements_data", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const { icon, ...cleanAnn } = newAnn;
+      setDoc(doc(db, "announcements", String(newAnn.id)), cleanAnn).catch((err) =>
+        console.warn("Firestore duyuru ekleme hatası:", err)
+      );
+    }
     notify(`"${newAnn.title}" duyurusu yayınlandı.`);
   }
 
   function handleDeleteAnnouncement(annId, title) {
+    const annIdStr = String(annId);
     const updated = announcementsList.filter(
-      (a) => (a.id ? a.id !== annId : a.title !== title),
+      (a) => (a.id ? String(a.id) !== annIdStr : a.title !== title),
     );
     setAnnouncementsList(updated);
     try {
       localStorage.setItem("iaas_announcements_data", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      deleteDoc(doc(db, "announcements", annIdStr)).catch((err) =>
+        console.warn("Firestore duyuru silme hatası:", err)
+      );
+    }
     notify(`"${title}" duyurusu kaldırıldı.`);
   }
   function handleRegister(newMember) {
@@ -897,20 +1290,62 @@ function App() {
   }
 
   function handleToggleAdmin(targetId) {
-    const target = members.find((m) => m.id === targetId);
+    const target = members.find(
+      (m) => String(m.id) === String(targetId) || String(m.uid) === String(targetId)
+    );
     if (!target) return;
-    if (isAdminUser(target) && target.role === "admin" && (target.email === "admintr@ohu.edu.tr" || target.email === "feritefeturksadcolak@ohu.edu.tr")) {
+    if (
+      isAdminUser(target) &&
+      target.role === "admin" &&
+      (target.email === "admintr@ohu.edu.tr" ||
+        target.email === "feritefeturksadcolak@ohu.edu.tr")
+    ) {
       notify("Ana kulüp yöneticisi hesabının admin yetkisi kaldırılamaz.");
       return;
     }
     const newRole = target.role === "admin" ? "member" : "admin";
     const updated = members.map((m) =>
-      m.id === targetId ? { ...m, role: newRole } : m
+      String(m.id) === String(targetId) || String(m.uid) === String(targetId)
+        ? { ...m, role: newRole }
+        : m
     );
     setMembers(updated);
     try {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const docId = target.uid || target.id;
+      // 1. users tablosunu güncelle
+      setDoc(doc(db, "users", String(docId)), { role: newRole }, { merge: true }).catch(
+        (err) => console.warn("Firestore rol güncelleme hatası:", err)
+      );
+
+      // 2. admins koleksiyonunu senkronize et
+      if (newRole === "admin") {
+        setDoc(
+          doc(db, "admins", String(docId)),
+          {
+            uid: String(docId),
+            id: String(docId),
+            name: target.name || "",
+            email: target.email || "",
+            studentNo: target.studentNo || "",
+            cleanStudentNo: normalizeStudentNo(target.studentNo || target.cleanStudentNo),
+            role: "admin",
+            status: target.status || "Aktif",
+            updatedAt: serverTimestamp(),
+            grantedBy: auth.currentUser?.email || auth.currentUser?.uid || "admin",
+          },
+          { merge: true }
+        ).catch((err) => console.warn("Firestore admin ekleme hatası:", err));
+      } else {
+        deleteDoc(doc(db, "admins", String(docId))).catch((err) =>
+          console.warn("Firestore admin silme hatası:", err)
+        );
+      }
+    }
+
     notify(
       newRole === "admin"
         ? `${target.name} kullanıcısına Yönetici (Admin) yetkisi verildi.`
@@ -924,6 +1359,33 @@ function App() {
     try {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const docId = newMember.uid || newMember.id;
+      setDoc(doc(db, "users", String(docId)), newMember).catch((err) =>
+        console.warn("Firestore üye ekleme hatası:", err)
+      );
+
+      if (newMember.role === "admin" || isAdminUser(newMember)) {
+        setDoc(
+          doc(db, "admins", String(docId)),
+          {
+            uid: String(docId),
+            id: String(docId),
+            name: newMember.name || "",
+            email: newMember.email || "",
+            studentNo: newMember.studentNo || "",
+            cleanStudentNo: normalizeStudentNo(newMember.studentNo || newMember.cleanStudentNo),
+            role: "admin",
+            status: newMember.status || "Aktif",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        ).catch((err) => console.warn("Firestore admin ekleme hatası:", err));
+      }
+    }
+
     notify(`${newMember.name} kulüp kütüğüne eklendi.`);
   }
 
@@ -932,24 +1394,46 @@ function App() {
       notify("Kendi hesabınızı silemezsiniz.");
       return;
     }
-    const updated = members.filter((m) => m.id !== targetId);
+    const updated = members.filter(
+      (m) => String(m.id) !== String(targetId) && String(m.uid) !== String(targetId)
+    );
     setMembers(updated);
     try {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      deleteDoc(doc(db, "users", String(targetId))).catch((err) =>
+        console.warn("Firestore üye silme hatası:", err)
+      );
+      deleteDoc(doc(db, "admins", String(targetId))).catch((err) =>
+        console.warn("Firestore admin silme hatası:", err)
+      );
+    }
+
     notify(`${name} üye kaydı silindi.`);
   }
 
   function handleProfileSave(data) {
     const updatedUser = { ...currentUser, ...data };
     const updated = members.map((m) =>
-      m.id === currentUser.id ? updatedUser : m
+      String(m.id) === String(currentUser.id) ? updatedUser : m
     );
     setMembers(updated);
+    setCurrentUserSession(updatedUser);
     try {
       localStorage.setItem("iaas_members", JSON.stringify(updated));
+      localStorage.setItem("iaas_current_user", JSON.stringify(updatedUser));
       localStorage.setItem("iaas-profile", JSON.stringify(data));
     } catch {}
+
+    if (isFirebaseConfigured() && db && auth?.currentUser) {
+      const uid = currentUser.uid || currentUser.id;
+      setDoc(doc(db, "users", String(uid)), data, { merge: true }).catch((err) =>
+        console.warn("Firestore profil güncelleme hatası:", err)
+      );
+    }
+
     notify("Profil bilgilerin güncellendi.");
   }
 
@@ -1637,7 +2121,7 @@ function App() {
                     (e) =>
                       eventFilter === "Tümü" ||
                       (eventFilter === "Kayıtlarım"
-                        ? joined.includes(e.id)
+                        ? joined.some((jId) => String(jId) === String(e.id))
                         : eventFilter === e.category),
                   )
                   .map(eventCard)}

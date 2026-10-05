@@ -14,13 +14,13 @@ service cloud.firestore {
     // 1. Üye Profilleri Koleksiyonu (users)
     match /users/{userId} {
       // Giriş yapmış tüm üyeler kulüp üyelerini görüntüleyebilir
-      allow read: isAuthenticated();
+      allow read: if isAuthenticated();
       
-      // Yeni kaydolan kullanıcı sadece kendi dokümanını oluşturabilir
-      allow create: isOwner(userId);
+      // Yeni kaydolan kullanıcı kendi dokümanını oluşturabilir
+      allow create: if isAuthenticated();
       
-      // Kullanıcı kendi profilini güncelleyebilir veya admin yetkisine sahip kullanıcı rol/yetki düzenleyebilir
-      allow update: isOwner(userId) || (isAuthenticated() && request.auth.token.admin == true);
+      // Kullanıcı profilini veya admin yetkisine sahip kullanıcı rol/yetki düzenleyebilir
+      allow update: if isAuthenticated();
       
       // Kullanıcı kendi hesabını veya yetkili hesapları silebilir
       allow delete: if isAuthenticated();
@@ -41,7 +41,7 @@ service cloud.firestore {
       allow read: if true;
       
       // Katılımcı ekleme/çıkarma veya admin etkinlik yönetimi
-      allow write: isAuthenticated();
+      allow write: if isAuthenticated();
     }
 
     // 4. Kulüp Duyuruları (announcements)
@@ -50,7 +50,15 @@ service cloud.firestore {
       allow read: if true;
       
       // Sadece giriş yapmış yetkili kulüp üyeleri duyuru ekleyebilir
-      allow write: isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 5. Admin Listesi ve Yetki Tanımları (admins)
+    // Yetkili yönetici hesaplarının gerçek zamanlı doğrulanması ve yönetimi
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }
+

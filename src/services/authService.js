@@ -29,10 +29,14 @@ import {
  * Bilinen öğrenci numarası - e-posta haritası (gecikmesiz ve hatasız doğrudan çözümleme)
  */
 export const KNOWN_STUDENT_MAP = {
+  "admintr": "admintr@ohu.edu.tr",
+  "admin": "admintr@ohu.edu.tr",
   "240102020": "admintr@ohu.edu.tr",
   "240102015": "feritefeturksadcolak@ohu.edu.tr",
+  "ferit": "feritefeturksadcolak@ohu.edu.tr",
   "210405001": "colakferit21@gmail.com",
   "250102009": "arda.torna@ohu.edu.tr",
+  "arda": "arda.torna@ohu.edu.tr",
   "210405012": "deniz.yilmaz@ohu.edu.tr",
   "220405034": "ahmet.cetin@ohu.edu.tr",
   "230405088": "zeynep.kaya@ohu.edu.tr",
@@ -232,6 +236,30 @@ export const registerWithFirebase = async ({
 
   await setDoc(userDocRef, userData);
 
+  // 4b. Admin yetkisine sahipse Firestore 'admins' koleksiyonuna da kaydet
+  if (isAdmin) {
+    try {
+      await setDoc(
+        doc(db, "admins", user.uid),
+        {
+          uid: user.uid,
+          id: user.uid,
+          name: name.trim(),
+          email: cleanEmail,
+          studentNo: studentNo.trim(),
+          cleanStudentNo,
+          role: "admin",
+          status: "Aktif",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (adminErr) {
+      console.warn("Admin tablosu yazma uyarısı:", adminErr);
+    }
+  }
+
   // 5. Öğrenci no tekillik indeksine kaydet ve yerel önbelleğe al
   try {
     await setDoc(doc(db, "studentNumbers", cleanStudentNo), {
@@ -328,7 +356,20 @@ export const loginWithFirebase = async (identifier, password) => {
     const snapshot = await getDoc(userDocRef);
     if (snapshot.exists()) {
       const data = snapshot.data();
-      const isAdmin = isAdminUser({ ...data, email: user.email, id: user.uid, uid: user.uid });
+
+      // Firestore 'admins' koleksiyonundan kontrol et
+      let isDbAdmin = false;
+      try {
+        const adminDoc = await getDoc(doc(db, "admins", user.uid));
+        if (adminDoc.exists()) {
+          isDbAdmin = true;
+        }
+      } catch {}
+
+      const isAdmin =
+        isDbAdmin ||
+        isAdminUser({ ...data, email: user.email, id: user.uid, uid: user.uid });
+
       profile = {
         id: user.uid,
         uid: user.uid,
@@ -344,6 +385,27 @@ export const loginWithFirebase = async (identifier, password) => {
         } catch (syncErr) {
           console.warn("Firestore rol güncellemesi kaydedilemedi:", syncErr);
         }
+      }
+
+      // Admin ise 'admins' tablosuna kaydet
+      if (isAdmin) {
+        try {
+          await setDoc(
+            doc(db, "admins", user.uid),
+            {
+              uid: user.uid,
+              id: user.uid,
+              name: profile.name || user.displayName || "Admin",
+              email: profile.email || emailToUse,
+              studentNo: profile.studentNo || "",
+              cleanStudentNo: profile.cleanStudentNo || "",
+              role: "admin",
+              status: profile.status || "Aktif",
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch {}
       }
     }
   } catch (err) {
@@ -380,6 +442,27 @@ export const loginWithFirebase = async (identifier, password) => {
     try {
       await setDoc(userDocRef, profile, { merge: true });
     } catch {}
+
+    if (isAdmin) {
+      try {
+        await setDoc(
+          doc(db, "admins", user.uid),
+          {
+            uid: user.uid,
+            id: user.uid,
+            name: profile.name,
+            email: profile.email,
+            studentNo: profile.studentNo,
+            cleanStudentNo: profile.cleanStudentNo,
+            role: "admin",
+            status: "Aktif",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch {}
+    }
   }
 
   // Öğrenci numarası mevcutsa önbelleğe kaydet

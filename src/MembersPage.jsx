@@ -127,12 +127,13 @@ export default function MembersPage({
 
   // Filtered members
   const filteredMembers = members.filter((m) => {
+    const s = (memberSearch || "").toLowerCase();
     const matchesSearch =
-      m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.email.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.studentNo.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.department.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.faculty.toLowerCase().includes(memberSearch.toLowerCase());
+      (m.name || "").toLowerCase().includes(s) ||
+      (m.email || "").toLowerCase().includes(s) ||
+      (m.studentNo || "").toLowerCase().includes(s) ||
+      (m.department || "").toLowerCase().includes(s) ||
+      (m.faculty || "").toLowerCase().includes(s);
 
     const matchesRole =
       filterRole === "all" ||
@@ -461,9 +462,9 @@ export default function MembersPage({
           <div className="members-grid">
             {filteredMembers.length > 0 ? (
               filteredMembers.map((member) => {
-                const isMe = member.id === currentUserId;
+                const isMe = member.id === currentUserId || member.uid === currentUserId;
                 const isAdmin = member.role === "admin";
-                const initials = member.name
+                const initials = (member.name || member.email || "Üye")
                   .split(" ")
                   .map((n) => n[0])
                   .slice(0, 2)
@@ -1135,7 +1136,7 @@ export default function MembersPage({
 
                     <div className="attendee-cards-list">
                       {attendees.map((attendee) => {
-                        const initials = attendee.name
+                        const initials = (attendee.name || attendee.email || "Katılımcı")
                           .split(" ")
                           .map((n) => n[0])
                           .slice(0, 2)
